@@ -1,0 +1,23 @@
+BasedOnStyle: Microsoft
+IndentWidth: 4
+UseTab: Never
+IndentCaseLabels: true
+ColumnLimit: 150
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+PointerAlignment: Left
+BraceWrapping: 
+  AfterFunction: false
+  AfterStruct: false
+BreakBeforeBraces: Attach
+SpaceInEmptyBlock: true
+AccessModifierOffset: -4
+MaxEmptyLinesToKeep: 2
+IncludeCategories:
+  - Regex: '^<.*\.h>'
+    Priority: 2
+  - Regex: '^".*\.h"'
+    Priority: 3
+  - Regex: '.*'
+    Priority: 1
+SortIncludes: false
