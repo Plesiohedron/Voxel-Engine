@@ -1,5 +1,7 @@
 #include "Events.h"
 
+#include <iostream>
+
 bool Events::_keys[1032] = {false};
 
 float Events::_cursor_x = 0.0f;
@@ -59,6 +61,8 @@ void Events::WindowResize_Callback(GLFWwindow* window, int width, int height) {
 
     glViewport(0, 0, width, height);
 
+    std::cout << "Huh?" << std::endl;
+
     Window::mWidth = width;
     Window::mHeight = height;
 
@@ -94,7 +98,7 @@ void Events::CursorPos_Callback(GLFWwindow* window, double xpos, double ypos) {
         _cursor_delta_x += f_xpos - _cursor_x;
         _cursor_delta_y += f_ypos - _cursor_y;
     } else
-        _cursor_isMoving = 1;
+        _cursor_isMoving = true;
 
     _cursor_x = f_xpos;
     _cursor_y = f_ypos;

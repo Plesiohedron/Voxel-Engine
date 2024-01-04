@@ -5,13 +5,23 @@
     <ClCompile Include="src\Engine\Engine.cpp" />
     <ClCompile Include="src\Events\Events.cpp" />
     <ClCompile Include="src\Window\Window.cpp" />
+    <ClCompile Include="src\GL\VAO.cpp" />
+    <ClCompile Include="src\GL\Program.cpp" />
+    <ClCompile Include="src\GL\Texture.cpp" />
+    <ClCompile Include="src\Load\Image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Engine\Engine.h" />
     <ClInclude Include="src\Events\Events.h" />
     <ClInclude Include="src\Window\Window.h" />
+    <ClInclude Include="src\GL\VAO.h" />
+    <ClInclude Include="src\GL\Program.h" />
+    <ClInclude Include="src\GL\Texture.h" />
+    <ClInclude Include="src\Load\Image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
+    <None Include="res\glsl\Shader.vert" />
+    <None Include="res\glsl\Shader.frag" />
   </ItemGroup>
 </Project>

@@ -17,12 +17,12 @@ void Window::initialize(int width, int height, const char* title) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    Window::mWindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
+    mWindow = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!mWindow)
         throw std::runtime_error("Failed to create window!");
 
-    Window::mWidth = width;
-    Window::mHeight = height;
+    mWidth = width;
+    mHeight = height;
 
     glfwMakeContextCurrent(mWindow);
 
@@ -30,22 +30,22 @@ void Window::initialize(int width, int height, const char* title) {
     if (glewInit() != GLEW_OK)
         throw std::runtime_error("Failed to initialize GLEW!");
 
-    glViewport(0, 0, Window::mWidth, Window::mHeight);
+    glViewport(0, 0, mWidth, mHeight);
 }
 
 bool Window::isShouldClose() {
-    return glfwWindowShouldClose(Window::mWindow);
+    return glfwWindowShouldClose(mWindow);
 }
 
 void Window::setShouldClose(bool flag) {
-    glfwSetWindowShouldClose(Window::mWindow, flag);
+    glfwSetWindowShouldClose(mWindow, flag);
 }
 
 void Window::swapBuffers() {
-    glfwSwapBuffers(Window::mWindow);
+    glfwSwapBuffers(mWindow);
 }
 
 void Window::deinitialize() {
-    glfwDestroyWindow(Window::mWindow);
+    glfwDestroyWindow(mWindow);
     glfwTerminate();
 }
