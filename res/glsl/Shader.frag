@@ -1,4 +1,4 @@
-#version 330
+#version 330 core
 
 in vec4 fragBrithness;
 in vec2 fragUV;

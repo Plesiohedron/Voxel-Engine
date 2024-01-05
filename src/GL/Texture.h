@@ -19,7 +19,7 @@ namespace GL {
         ~Texture();
 
         void bind();
-        void SetImage(const Image& image);
+        void setImage(const Image& image);
         void MakeWindowRegionTexture();
     };
 }

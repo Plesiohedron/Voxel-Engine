@@ -24,7 +24,7 @@ GL::Program::~Program() {
     glDeleteProgram(mProgram);
 }
 
-void GL::Program::Link() {
+void GL::Program::link() {
     glAttachShader(mProgram, mVertexShader);
     glAttachShader(mProgram, mFragmentShader);
     glLinkProgram(mProgram);
@@ -40,23 +40,19 @@ void GL::Program::Link() {
     }
 }
 
-void GL::Program::BindAttribute(GLuint index, const char* name) {
+void GL::Program::bindAttribute(GLuint index, const char* name) {
     glBindAttribLocation(mProgram, index, name);
 }
 
-GLint GL::Program::BindUniform(const char* name) {
+GLint GL::Program::bindUniform(const char* name) {
     return glGetUniformLocation(mProgram, name);
 }
 
-void GL::Program::Use() {
+void GL::Program::use() {
     glUseProgram(mProgram);
 }
 
-void GL::Program::BrithnessAnimation(const char* name, float value) {
-    glUniform1f(glGetUniformLocation(mProgram, name), value);
-}
-
-void GL::Program::UniformMatrix(const char* name, glm::mat4 matrix) {
+void GL::Program::uniformMatrix(const char* name, glm::mat4 matrix) {
     glUniformMatrix4fv(glGetUniformLocation(mProgram, name), 1, GL_FALSE, glm::value_ptr(matrix));
 }
 

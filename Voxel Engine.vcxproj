@@ -130,6 +130,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Chunks\ChunkRenderer.cpp" />
+    <ClCompile Include="src\Chunks\Chunk.cpp" />
+    <ClCompile Include="src\Camera\Camera.cpp" />
     <ClCompile Include="src\Load\Image.cpp" />
     <ClCompile Include="src\GL\Program.cpp" />
     <ClCompile Include="src\Events\Events.cpp" />
@@ -140,6 +143,10 @@
     <ClCompile Include="src\GL\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Chunks\ChunkRenderer.h" />
+    <ClInclude Include="src\Chunks\Chunk.h" />
+    <ClInclude Include="src\Camera\Camera.h" />
+    <ClInclude Include="src\Chunks\Voxel.h" />
     <ClInclude Include="src\Load\Image.h" />
     <ClInclude Include="src\GL\Program.h" />
     <ClInclude Include="src\Events\Events.h" />

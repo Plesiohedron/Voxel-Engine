@@ -9,6 +9,9 @@
     <ClCompile Include="src\GL\Program.cpp" />
     <ClCompile Include="src\GL\Texture.cpp" />
     <ClCompile Include="src\Load\Image.cpp" />
+    <ClCompile Include="src\Camera\Camera.cpp" />
+    <ClCompile Include="src\Chunks\Chunk.cpp" />
+    <ClCompile Include="src\Chunks\ChunkRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Engine\Engine.h" />
@@ -18,6 +21,10 @@
     <ClInclude Include="src\GL\Program.h" />
     <ClInclude Include="src\GL\Texture.h" />
     <ClInclude Include="src\Load\Image.h" />
+    <ClInclude Include="src\Camera\Camera.h" />
+    <ClInclude Include="src\Chunks\Voxel.h" />
+    <ClInclude Include="src\Chunks\Chunk.h" />
+    <ClInclude Include="src\Chunks\ChunkRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

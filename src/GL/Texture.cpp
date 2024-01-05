@@ -14,7 +14,7 @@ void GL::Texture::bind() {
     glBindTexture(GL_TEXTURE_2D, mHandle);
 }
 
-void GL::Texture::SetImage(const Image& image) {
+void GL::Texture::setImage(const Image& image) {
     glBindTexture(GL_TEXTURE_2D, mHandle);
 
     switch (image.getFormat()) {

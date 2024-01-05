@@ -45,6 +45,10 @@ void Window::swapBuffers() {
     glfwSwapBuffers(mWindow);
 }
 
+float Window::getAspect() {
+    return static_cast<float>(mWidth) / mHeight;
+}
+
 void Window::deinitialize() {
     glfwDestroyWindow(mWindow);
     glfwTerminate();

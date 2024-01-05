@@ -1,8 +1,9 @@
 #pragma once
 
-#include "..\Window\Window.h"
+#include "../Window/Window.h"
 
-struct Events {
+class Events {
+public:
     static const short int MOUSE_BUTTONS = 1024;
 
     static bool _keys[1032];
@@ -19,7 +20,7 @@ struct Events {
     static unsigned long long int _current_frame;
     static unsigned long long int _frames[1032];
 
-public:
+
     static void initialize();
     static void pollEvents();
 
@@ -28,6 +29,8 @@ public:
 
     static bool mouse_isClicked(int button);
     static bool mouse_isPressed(int button);
+
+    static void switchCursor();
 
 private:
     static void WindowResize_Callback(GLFWwindow* window, int width, int height);

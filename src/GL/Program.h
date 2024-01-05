@@ -19,11 +19,10 @@ namespace GL {
         Program(const std::string& name);
         ~Program();
 
-        void Link();
-        void BindAttribute(GLuint index, const char* name);
-        GLint BindUniform(const char* name);
-        void Use();
-        void BrithnessAnimation(const char* name, float value);
-        void UniformMatrix(const char* name, glm::mat4 matrix);
+        void link();
+        void bindAttribute(GLuint index, const char* name);
+        GLint bindUniform(const char* name);
+        void use();
+        void uniformMatrix(const char* name, glm::mat4 matrix);
     };
 }

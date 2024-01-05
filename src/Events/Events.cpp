@@ -53,6 +53,11 @@ bool Events::mouse_isPressed(int button) {
     return _keys[MOUSE_BUTTONS + button];
 }
 
+void Events::switchCursor() {
+    _cursor_isLocked = !_cursor_isLocked;
+    glfwSetInputMode(Window::mWindow, GLFW_CURSOR, _cursor_isLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+}
+
 void Events::WindowResize_Callback(GLFWwindow* window, int width, int height) {
     if (width % 2 == 1)
         width--;
@@ -60,8 +65,6 @@ void Events::WindowResize_Callback(GLFWwindow* window, int width, int height) {
         height--;
 
     glViewport(0, 0, width, height);
-
-    std::cout << "Huh?" << std::endl;
 
     Window::mWidth = width;
     Window::mHeight = height;
