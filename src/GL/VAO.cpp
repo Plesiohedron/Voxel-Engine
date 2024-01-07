@@ -14,11 +14,11 @@ GL::VAO::VAO(Type type) {
     } else if (type == Test) {
         attributes = new int[3];
         attributes[0] = 1;
-        attributes[1] = 2;
-        attributes[2] = 3;
+        attributes[1] = 1;
+        attributes[2] = 1;
 
         attributes_count = 3;
-        vertex_size = 6;
+        vertex_size = 3;
     }
 }
 
@@ -42,7 +42,7 @@ void GL::VAO::draw(unsigned primitiveType, unsigned indexes_count) {
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-    glDrawElements(primitiveType, indexes_count, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(primitiveType, indexes_count, GL_UNSIGNED_SHORT, nullptr);
 
     for (int i = 0; i < attributes_count; i++) {
         glDisableVertexAttribArray(i);
@@ -66,10 +66,25 @@ void GL::VAO::initializeVBO_vertices(const float* vertices, unsigned vertices_co
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, vertex_size * sizeof(float), (GLvoid*) (offset * sizeof(float)));
 }
 
-void GL::VAO::initializeEBO(const unsigned* indexes, unsigned indexes_count) {
+void GL::VAO::test(const GLushort* vertices, unsigned vertices_count) {
+    glGenBuffers(1, &mVBO1);
+    glBindBuffer(GL_ARRAY_BUFFER, mVBO1);
+    glBufferData(GL_ARRAY_BUFFER, vertices_count * vertex_size * sizeof(GLushort), vertices, GL_STATIC_DRAW);
+
+    unsigned offset = 0;
+    glVertexAttribIPointer(0, 1, GL_UNSIGNED_SHORT, vertex_size * sizeof(GLushort), (GLvoid*) (offset * sizeof(GLushort)));
+
+    offset += attributes[0];
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, vertex_size * sizeof(GLushort), (GLvoid*) (offset * sizeof(GLushort)));
+
+    offset += attributes[1];
+    glVertexAttribIPointer(2, 1, GL_UNSIGNED_SHORT, vertex_size * sizeof(GLushort), (GLvoid*) (offset * sizeof(GLushort)));
+}
+
+void GL::VAO::initializeEBO(const GLushort* indexes, unsigned indexes_count) {
     glGenBuffers(1, &mEBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexes_count * sizeof(unsigned), indexes, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexes_count * sizeof(GLushort), indexes, GL_STATIC_DRAW);
 }
 
 void GL::VAO::postInitialization() {

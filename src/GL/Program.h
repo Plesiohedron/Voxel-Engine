@@ -22,7 +22,9 @@ namespace GL {
         void link();
         void bindAttribute(GLuint index, const char* name);
         GLint bindUniform(const char* name);
+        GLint getUniformLocation(const char* name);
         void use();
+        void uniformMatrix(GLint uniform, glm::mat4 matrix);
         void uniformMatrix(const char* name, glm::mat4 matrix);
     };
 }

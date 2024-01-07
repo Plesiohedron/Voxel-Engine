@@ -48,12 +48,16 @@ GLint GL::Program::bindUniform(const char* name) {
     return glGetUniformLocation(mProgram, name);
 }
 
+GLint GL::Program::getUniformLocation(const char* name) {
+    return glGetUniformLocation(mProgram, name);
+}
+
 void GL::Program::use() {
     glUseProgram(mProgram);
 }
 
-void GL::Program::uniformMatrix(const char* name, glm::mat4 matrix) {
-    glUniformMatrix4fv(glGetUniformLocation(mProgram, name), 1, GL_FALSE, glm::value_ptr(matrix));
+void GL::Program::uniformMatrix(GLint uniform, glm::mat4 matrix) {
+    glUniformMatrix4fv(uniform, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
 GLuint GL::Program::LoadShader(const char* path, GLenum shaderType) {

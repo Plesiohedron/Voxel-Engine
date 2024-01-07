@@ -1,14 +1,15 @@
-#version 330 core
+#version 460 core
 
-layout (location = 0) in float brithness;
-layout (location = 1) in vec2 UV;
-layout (location = 2) in vec3 position;
-//layout (location = 3) in vec3 color;
+#extension GL_NV_gpu_shader5 : enable
 
-out vec4 fragBrithness;
+layout (location = 0) in uint16_t color;
+layout (location = 1) in uint16_t UV;
+layout (location = 2) in uint16_t position;
+
+//out vec4 fragBrithness;
 out vec2 fragUV;
-out vec3 fragPosition;
-//out vec3 fragColor;
+//out vec3 fragPosition;
+//out vec4 fragColor;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -16,12 +17,20 @@ uniform mat4 view;
 uniform mat4 model;
 
 void main() {
-	gl_Position = projection * view * model * vec4(position, 1.0f);
-	//gl_Position = projview * model * vec4(position, 1.0f);
-	//gl_Position = vec4(position, 1.0f);
 
-	fragBrithness = vec4(brithness, brithness, brithness, 1.0f);
-	fragUV = UV - vec2(0.0000001f, 0.0000001f);
-	//FragPosition = (View * Model * vec4(Position, 1.0f)).xyz;
-	//fragColor = color;
+	float r = ((color >> 12u) & 0xFu) / 15.0f;
+	float g = ((color >> 8u) & 0xFu) / 15.0f;
+	float b = ((color >> 4u) & 0xFu) / 15.0f;
+	float a = (color & 0xFu) / 15.0f;
+
+	float UVx = ((UV >> 5u) & 0x1Fu) / 16.0f;
+	float UVy = (UV & 0x1Fu) / 16.0f;
+
+	float x = ((position >> 10u) & 0x1Fu);
+	float y = ((position >> 5u) & 0x1Fu);
+	float z = (position & 0x1Fu);
+
+	//fragColor = vec4(r, g, b, a);
+	fragUV = vec2(UVx - 0.0000001f, UVy - 0.0000001f);
+	gl_Position = projection * view * model * vec4(x, y, z, 1.0f);
 }

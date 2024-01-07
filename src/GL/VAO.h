@@ -13,6 +13,7 @@ namespace GL {
     private:
         GLuint mVAO = 0;
         GLuint mVBO = 0;
+        GLuint mVBO1 = 0;
         GLuint mEBO = 0;
 
         int* attributes;
@@ -30,7 +31,8 @@ namespace GL {
         void draw(unsigned primitiveType, unsigned indexes_count);
 
         void initializeVBO_vertices(const float* vertices, unsigned vertices_count);
-        void initializeEBO(const unsigned* data, unsigned indexes_count);
+        void test(const GLushort* color, unsigned vertices_count);
+        void initializeEBO(const GLushort* data, unsigned indexes_count);
 
         void postInitialization();
 
