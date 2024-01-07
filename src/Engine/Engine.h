@@ -12,6 +12,10 @@ private:
     static float fovCamera;
     static glm::mat4 model;
 
+    static GLint uniformProjection;
+    static GLint uniformView;
+    static GLint uniformModel;
+
 public:
     static void initialize(int width, int height, const char* title);
     static void deinitialize();

@@ -8,22 +8,30 @@ glm::vec3 Engine::posCamera = {0.0f, 0.0f, 0.0f};
 float Engine::fovCamera = glm::radians(70.0f);
 glm::mat4 Engine::model(1.0f);
 
+GL::Texture textureAtlas;
+
+GLint Engine::uniformProjection;
+GLint Engine::uniformView;
+GLint Engine::uniformModel;
+
 void Engine::initialize(int width, int height, const char* title) {
     Window::initialize(width, height, title);
     Events::initialize();
     Camera::initialize(posCamera, fovCamera);
+
+    textureAtlas.setImage(Image::LoadImage("Atlas.png"));
 }
 
 void Engine::mainLoop() {
     GL::Program shaderProgram("Shader");
-    shaderProgram.bindAttribute(0, "brithness");
+    shaderProgram.bindAttribute(0, "color");
     shaderProgram.bindAttribute(1, "UV");
     shaderProgram.bindAttribute(2, "position");
     shaderProgram.link();
 
-    GL::Texture textureAtlas;
-    textureAtlas.setImage(Image::LoadImage("Atlas.png"));
-    textureAtlas.bind();
+    uniformProjection = shaderProgram.getUniformLocation("projection");
+    uniformView = shaderProgram.getUniformLocation("view");
+    uniformModel = shaderProgram.getUniformLocation("model");
 
     /*Chunk chunk;
     Chunk* neighbouringСhunks[8] = {nullptr};
@@ -39,16 +47,17 @@ void Engine::mainLoop() {
 
     GL::VAO test(GL::VAO::Type::Test);
 
-    float* sprite = new float[6 * 4]{1.0f, 0.0f, 0.0f, 0.5f, 0.5f, 0.0f,
-                           1.0f, 0.0625f, 0.0f, 0.5f, -0.5f, 0.0f,
-                           1.0f, 0.0f, 0.0625f, -0.5f, 0.5f, 0.0f,
-                           1.0f, 0.0625f, 0.0625f, -0.5f, -0.5f, 0.0f};
+    //                                              r              g            b        a      UVx      UVy     x             y       z
+    GLushort* vertices = new GLushort[12]{(15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 0,
+                           (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 0,
+                           (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 0,
+                           (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 0};
 
-    unsigned* indexes = new unsigned[6]{0, 2, 1,
-                                        1, 2, 3};
+    GLushort* indexes = new GLushort[6]{0, 1, 2,
+                                        0, 2, 3};
 
     test.bind();
-    test.initializeVBO_vertices(sprite, 4);
+    test.test(vertices, 4);
     test.initializeEBO(indexes, 6);
     test.postInitialization();
 
@@ -102,9 +111,12 @@ void Engine::mainLoop() {
             glClear(GL_COLOR_BUFFER_BIT);
 
             shaderProgram.use();
-            shaderProgram.uniformMatrix("projection", Camera::getProjection());
-            shaderProgram.uniformMatrix("view", Camera::getView());
-            shaderProgram.uniformMatrix("model", model);
+            shaderProgram.uniformMatrix(uniformProjection, Camera::getProjection());
+            shaderProgram.uniformMatrix(uniformView, Camera::getView());
+            shaderProgram.uniformMatrix(uniformModel, model);
+
+            textureAtlas.bind();
+
             test.draw(GL_TRIANGLES, 6);
             //chunkVAO.draw(GL_TRIANGLES, chunk.currentIndexesCount);
         }
@@ -113,7 +125,7 @@ void Engine::mainLoop() {
         Events::pollEvents();
     }
 
-    delete[] sprite;
+    delete[] vertices;
     delete[] indexes;
 }
 
