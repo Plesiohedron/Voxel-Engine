@@ -3,26 +3,29 @@
 #include <math.h>
 
 Chunk::Chunk() {
-    voxels = new Voxel[VOLUME];
+    voxels = new Voxel[CHUNK_VOL]();
 
-    for (int y = 0; y < HEIGHT; y++) {
-        for (int z = 0; z < DEPTH; z++) {
-            for (int x = 0; x < WIDTH; x++) {
-                int id = y <= (sin(x * 0.3f) * 0.5f + 0.5f) * 10;
+    uint8_t id;
+    for (int y = 0; y < CHUNK_H; y++) {
+        for (int z = 0; z < CHUNK_D; z++) {
+            for (int x = 0; x < CHUNK_W; x++) {
+                id = y <= (sin(x * 0.3f) * 0.5f + 0.5f) * 10;
                 if (y <= 2)
-                    id = 2;
+                    id = 4;
+
 
                 // voxels[y][z][x] := voxels[(y * CHUNK_DEPTH + z) * CHUNK_WIDTH + x]
-                voxels[(y * DEPTH + z) * WIDTH + x].id = id;
+                voxels[(y * CHUNK_D + z) * CHUNK_W + x].id = id;
             }
         }
     }
 
-    vertices = new float[ATTRIBUTES_COUNT * ((HEIGHT + 1) * (DEPTH + 1) * (WIDTH + 1))];
-    indexes = new unsigned[(HEIGHT + 1) * (DEPTH + 1) * (WIDTH + 1)];
+    vertices = new GLushort[ATTRIBUTES_COUNT * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1)]();
+    indexes = new GLushort[6 * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1)]();
 }
 
 Chunk::~Chunk() {
+    delete[] voxels;
     delete[] vertices;
     delete[] indexes;
 }

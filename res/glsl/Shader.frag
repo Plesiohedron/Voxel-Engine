@@ -11,6 +11,6 @@ uniform sampler2D texture0;
 //uniform vec3 CameraPosition;
 
 void main() {
-    color = texture(texture0, fragUV);
+    color = fragColor * texture(texture0, fragUV);
     //color = fragColor;
 }

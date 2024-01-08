@@ -4,7 +4,7 @@
 #include "../Camera/Camera.h"
 #include "../Chunks/ChunkRenderer.h"
 
-glm::vec3 Engine::posCamera = {0.0f, 0.0f, 0.0f};
+glm::vec3 Engine::posCamera = {0.0f, 0.0f, -5.0f};
 float Engine::fovCamera = glm::radians(70.0f);
 glm::mat4 Engine::model(1.0f);
 
@@ -18,6 +18,8 @@ void Engine::initialize(int width, int height, const char* title) {
     Window::initialize(width, height, title);
     Events::initialize();
     Camera::initialize(posCamera, fovCamera);
+    Camera::rotate(0.0f, glm::radians(180.0f), 0.0f);
+    Camera::cameraRotationX = glm::radians(180.0f);
 
     textureAtlas.setImage(Image::LoadImage("Atlas.png"));
 }
@@ -33,36 +35,73 @@ void Engine::mainLoop() {
     uniformView = shaderProgram.getUniformLocation("view");
     uniformModel = shaderProgram.getUniformLocation("model");
 
-    /*Chunk chunk;
-    Chunk* neighbouringСhunks[8] = {nullptr};
+    Chunk chunk;
+    //Chunk* neighbouringСhunks[8] = {nullptr};
 
-    ChunkRenderer::render(chunk, (const Chunk**) neighbouringСhunks);
+    ChunkRenderer::render(chunk);
 
-    GL::VAO chunkVAO(GL::VAO::Type::VAOchunk);
+    GL::VAO chunkVAO(GL::VAO::Type::Test);
 
     chunkVAO.bind();
+    chunkVAO.test(chunk.vertices, chunk.currentVerticesCount);
+    chunkVAO.initializeEBO(chunk.indexes, chunk.currentIndexesCount);
+    chunkVAO.postInitialization();
+
+    /*chunkVAO.bind();
     chunkVAO.initializeVBO_vertices(chunk.vertices, chunk.currentVerticesCount);
     chunkVAO.initializeEBO(chunk.indexes, chunk.currentIndexesCount);
     chunkVAO.postInitialization();*/
 
-    GL::VAO test(GL::VAO::Type::Test);
+    /*GL::VAO test(GL::VAO::Type::Test);
 
-    //                                              r              g            b        a      UVx      UVy     x             y       z
-    GLushort* vertices = new GLushort[12]{(15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 0,
-                           (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 0,
-                           (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 0,
-                           (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 0};
+    unsigned vertices_count = 6 * 12;
+    unsigned indexes_count = 6 * 6;
 
-    GLushort* indexes = new GLushort[6]{0, 1, 2,
-                                        0, 2, 3};
+    //        r             g             b        a      UVx      UVy     x            y        z
+    GLushort* vertices = new GLushort[vertices_count]{
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (1 << 10) | (1 << 5) | 0,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (1 << 10) | (0 << 5) | 0,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (0 << 10) | (1 << 5) | 0,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (0 << 10) | (0 << 5) | 0,
+
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 1,
+
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (1 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 0,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (1 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 0,
+
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (0 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (0 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 0,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 0,
+
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (1 << 10) | (1 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (1 << 10) | (0 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 0,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 0,
+
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (0 << 10) | (1 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 0,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (0 << 10) | (0 << 5) | 1,
+        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 0,
+    };
+
+    GLushort* indexes = new GLushort[indexes_count]{
+        0, 1, 2, 2, 1, 3,   4, 5, 6, 6, 5, 7,   8, 9, 10, 10, 9, 11,   12, 13, 14, 14, 13, 15,   16, 17, 18, 18, 17, 19,   20, 21, 22, 22, 21, 23
+    };
 
     test.bind();
-    test.test(vertices, 4);
-    test.initializeEBO(indexes, 6);
-    test.postInitialization();
+    test.test(vertices, vertices_count);
+    test.initializeEBO(indexes, indexes_count);
+    test.postInitialization();*/
 
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.5f));
+    //model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
 
+    glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -108,7 +147,7 @@ void Engine::mainLoop() {
                 Camera::rotate(Camera::cameraRotationY, Camera::cameraRotationX, 0.0f);
             }
 
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             shaderProgram.use();
             shaderProgram.uniformMatrix(uniformProjection, Camera::getProjection());
@@ -117,16 +156,16 @@ void Engine::mainLoop() {
 
             textureAtlas.bind();
 
-            test.draw(GL_TRIANGLES, 6);
-            //chunkVAO.draw(GL_TRIANGLES, chunk.currentIndexesCount);
+            //test.draw(GL_TRIANGLES, indexes_count);
+            chunkVAO.draw(GL_TRIANGLES, chunk.currentIndexesCount);
         }
 
         Window::swapBuffers();
         Events::pollEvents();
     }
 
-    delete[] vertices;
-    delete[] indexes;
+    //delete[] vertices;
+    //delete[] indexes;
 }
 
 void Engine::deinitialize() {
