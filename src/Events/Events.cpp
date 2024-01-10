@@ -69,7 +69,7 @@ void Events::WindowResize_Callback(GLFWwindow* window, int width, int height) {
     Window::mWidth = width;
     Window::mHeight = height;
 
-    Window::mResized = true;
+    Window::isResized = true;
 }
 
 void Events::Key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -109,7 +109,7 @@ void Events::CursorPos_Callback(GLFWwindow* window, double xpos, double ypos) {
 
 void Events::WindowIconify_Callback(GLFWwindow* window, int iconified) {
     if (iconified)
-        Window::mIconfied = true;
+        Window::isIconfied = true;
     else
-        Window::mIconfied = false;
+        Window::isIconfied = false;
 }

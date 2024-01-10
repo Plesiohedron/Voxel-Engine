@@ -6,11 +6,11 @@
 #define VOXEL(X, Y, Z) (chunk.voxels[((Y) * CHUNK_D + (Z)) * CHUNK_W + (X)])
 #define IS_BLOCKED(X, Y, Z) ((IS_IN(X, Y, Z)) && VOXEL(X, Y, Z).id)
 
-#define VERTEX(IDX, R, G, B, S, U, V, X, Y, Z)\
-    chunk.vertices[IDX + 0] = ((R << 12) | (G << 8) | (B << 4) | S);\
-    chunk.vertices[IDX + 1] = ((U << 5) | V);\
-    chunk.vertices[IDX + 2] = ((X << 10) | (Y << 5) | Z);\
-    IDX += VERTEX_SIZE;
+#define VERTEX(idx, r, g, b, s, u, v, x, y, z)\
+    chunk.vertices[idx + 0] = ((x << 10) | (y << 5) | z);\
+    chunk.vertices[idx + 1] = ((u << 5) | v);\
+    chunk.vertices[idx + 2] = ((r << 12) | (g << 8) | (b << 4) | s);\
+    idx += VERTEX_SIZE;
 
 #define INDEX(IDX, VALUE)\
     chunk.indexes[IDX + 0] = VALUE + 0;\

@@ -20,6 +20,5 @@ namespace GL {
 
         void bind();
         void setImage(const Image& image);
-        void MakeWindowRegionTexture();
     };
 }

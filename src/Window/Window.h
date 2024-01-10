@@ -15,8 +15,8 @@ public:
     friend class Events;
     friend class Engine;
 
-    static bool mIconfied;
-    static bool mResized;
+    static bool isIconfied;
+    static bool isResized;
 
     static void initialize(int width, int height, const char* title);
     static void deinitialize();

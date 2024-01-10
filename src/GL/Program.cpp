@@ -40,24 +40,24 @@ void GL::Program::link() {
     }
 }
 
-void GL::Program::bindAttribute(GLuint index, const char* name) {
-    glBindAttribLocation(mProgram, index, name);
+void GL::Program::use() {
+    glUseProgram(mProgram);
 }
 
-GLint GL::Program::bindUniform(const char* name) {
-    return glGetUniformLocation(mProgram, name);
+void GL::Program::bindAttribute(GLuint index, const char* name) {
+    glBindAttribLocation(mProgram, index, name);
 }
 
 GLint GL::Program::getUniformLocation(const char* name) {
     return glGetUniformLocation(mProgram, name);
 }
 
-void GL::Program::use() {
-    glUseProgram(mProgram);
+void GL::Program::uniformMatrix(GLint location, glm::mat4 matrix) {
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-void GL::Program::uniformMatrix(GLint uniform, glm::mat4 matrix) {
-    glUniformMatrix4fv(uniform, 1, GL_FALSE, glm::value_ptr(matrix));
+void GL::Program::uniformTexture(GLint location, GLint number) {
+    glUniform1i(location, number);
 }
 
 GLuint GL::Program::LoadShader(const char* path, GLenum shaderType) {

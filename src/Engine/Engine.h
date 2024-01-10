@@ -4,7 +4,7 @@
 #include "../GL/Texture.h"
 #include "../GL/VAO.h"
 #include "../Chunks/Chunk.h"
-
+#include "../GUI/Crosshair.h"
 
 class Engine {
 private:
@@ -12,9 +12,13 @@ private:
     static float fovCamera;
     static glm::mat4 model;
 
-    static GLint uniformProjection;
-    static GLint uniformView;
-    static GLint uniformModel;
+    static GLint uniformTextureLoc;
+
+    static GLint uniformProjectionLoc;
+    static GLint uniformViewLoc;
+    static GLint uniformModelLoc;
+
+    static GL::Texture textureAtlas;
 
 public:
     static void initialize(int width, int height, const char* title);

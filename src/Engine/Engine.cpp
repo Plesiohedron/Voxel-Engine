@@ -8,11 +8,13 @@ glm::vec3 Engine::posCamera = {0.0f, 0.0f, -5.0f};
 float Engine::fovCamera = glm::radians(70.0f);
 glm::mat4 Engine::model(1.0f);
 
-GL::Texture textureAtlas;
+GLint Engine::uniformTextureLoc;
 
-GLint Engine::uniformProjection;
-GLint Engine::uniformView;
-GLint Engine::uniformModel;
+GLint Engine::uniformProjectionLoc;
+GLint Engine::uniformViewLoc;
+GLint Engine::uniformModelLoc;
+
+GL::Texture Engine::textureAtlas;
 
 void Engine::initialize(int width, int height, const char* title) {
     Window::initialize(width, height, title);
@@ -25,87 +27,42 @@ void Engine::initialize(int width, int height, const char* title) {
 }
 
 void Engine::mainLoop() {
+    Crosshair crosshair(Window::mWidth, Window::mHeight);
+
     GL::Program shaderProgram("Shader");
     shaderProgram.bindAttribute(0, "color");
     shaderProgram.bindAttribute(1, "UV");
     shaderProgram.bindAttribute(2, "position");
     shaderProgram.link();
 
-    uniformProjection = shaderProgram.getUniformLocation("projection");
-    uniformView = shaderProgram.getUniformLocation("view");
-    uniformModel = shaderProgram.getUniformLocation("model");
+    uniformTextureLoc = shaderProgram.getUniformLocation("texture0");
+
+    uniformProjectionLoc = shaderProgram.getUniformLocation("projection");
+    uniformViewLoc = shaderProgram.getUniformLocation("view");
+    uniformModelLoc = shaderProgram.getUniformLocation("model");
+
+
 
     Chunk chunk;
     //Chunk* neighbouringСhunks[8] = {nullptr};
 
     ChunkRenderer::render(chunk);
 
-    GL::VAO chunkVAO(GL::VAO::Type::Test);
+    GL::VAO chunkVAO(GL::VAO::Type::VAOchunk);
 
     chunkVAO.bind();
-    chunkVAO.test(chunk.vertices, chunk.currentVerticesCount);
+    chunkVAO.initializeVBO(chunk.vertices, chunk.currentVerticesCount);
     chunkVAO.initializeEBO(chunk.indexes, chunk.currentIndexesCount);
     chunkVAO.postInitialization();
-
-    /*chunkVAO.bind();
-    chunkVAO.initializeVBO_vertices(chunk.vertices, chunk.currentVerticesCount);
-    chunkVAO.initializeEBO(chunk.indexes, chunk.currentIndexesCount);
-    chunkVAO.postInitialization();*/
-
-    /*GL::VAO test(GL::VAO::Type::Test);
-
-    unsigned vertices_count = 6 * 12;
-    unsigned indexes_count = 6 * 6;
-
-    //        r             g             b        a      UVx      UVy     x            y        z
-    GLushort* vertices = new GLushort[vertices_count]{
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (1 << 10) | (1 << 5) | 0,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (1 << 10) | (0 << 5) | 0,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (0 << 10) | (1 << 5) | 0,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (0 << 10) | (0 << 5) | 0,
-
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 1,
-
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (1 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 0,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (1 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 0,
-
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (0 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (0 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 0,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 0,
-
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (1 << 10) | (1 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (1 << 10) | (0 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (1 << 10) | (1 << 5) | 0,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (1 << 10) | (0 << 5) | 0,
-
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 0, (0 << 10) | (1 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 0, (0 << 10) | (1 << 5) | 0,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (1 << 5) | 1, (0 << 10) | (0 << 5) | 1,
-        (15 << 12) | (15 << 8) | (15 << 4) | 15, (0 << 5) | 1, (0 << 10) | (0 << 5) | 0,
-    };
-
-    GLushort* indexes = new GLushort[indexes_count]{
-        0, 1, 2, 2, 1, 3,   4, 5, 6, 6, 5, 7,   8, 9, 10, 10, 9, 11,   12, 13, 14, 14, 13, 15,   16, 17, 18, 18, 17, 19,   20, 21, 22, 22, 21, 23
-    };
-
-    test.bind();
-    test.test(vertices, vertices_count);
-    test.initializeEBO(indexes, indexes_count);
-    test.postInitialization();*/
-
-    //model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
+    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE1);
+    glActiveTexture(GL_TEXTURE2);
 
     float lastTime = static_cast<float>(glfwGetTime());
     float deltaTime = 0.0f;
@@ -118,7 +75,7 @@ void Engine::mainLoop() {
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        if (!Window::mIconfied) {
+        if (!Window::isIconfied) {
 
             if (Events::key_isClicked(GLFW_KEY_ESCAPE))
                 Window::setShouldClose(true);
@@ -133,6 +90,11 @@ void Engine::mainLoop() {
                 Camera::position += Camera::vectorRight * deltaTime * speed;
             if (Events::key_isPressed(GLFW_KEY_A))
                 Camera::position -= Camera::vectorRight * deltaTime * speed;
+
+            if (Window::isResized) {
+                crosshair.updateModel(Window::mWidth, Window::mHeight);
+                Window::isResized = false;
+            }
 
             if (Events::_cursor_isLocked) {
                 Camera::cameraRotationX += -2 * Events::_cursor_delta_x / Window::mHeight;
@@ -150,22 +112,22 @@ void Engine::mainLoop() {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             shaderProgram.use();
-            shaderProgram.uniformMatrix(uniformProjection, Camera::getProjection());
-            shaderProgram.uniformMatrix(uniformView, Camera::getView());
-            shaderProgram.uniformMatrix(uniformModel, model);
+            shaderProgram.uniformMatrix(uniformProjectionLoc, Camera::getProjection());
+            shaderProgram.uniformMatrix(uniformViewLoc, Camera::getView());
+            shaderProgram.uniformMatrix(uniformModelLoc, model);
 
+            glActiveTexture(GL_TEXTURE0);
             textureAtlas.bind();
+            shaderProgram.uniformTexture(uniformTextureLoc, 0);
 
-            //test.draw(GL_TRIANGLES, indexes_count);
             chunkVAO.draw(GL_TRIANGLES, chunk.currentIndexesCount);
+
+            crosshair.draw(Events::_cursor_isMoving, Events::_cursor_isLocked);
         }
 
         Window::swapBuffers();
         Events::pollEvents();
     }
-
-    //delete[] vertices;
-    //delete[] indexes;
 }
 
 void Engine::deinitialize() {

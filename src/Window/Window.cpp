@@ -5,8 +5,8 @@ GLFWwindow* Window::mWindow;
 int Window::mWidth;
 int Window::mHeight;
 
-bool Window::mIconfied;
-bool Window::mResized;
+bool Window::isIconfied;
+bool Window::isResized;
 
 void Window::initialize(int width, int height, const char* title) {
     if (!glfwInit())

@@ -2,9 +2,9 @@
 
 #extension GL_NV_gpu_shader5 : enable
 
-layout (location = 0) in uint16_t color;
+layout (location = 0) in uint16_t position;
 layout (location = 1) in uint16_t UV;
-layout (location = 2) in uint16_t position;
+layout (location = 2) in uint16_t color;
 
 //out vec4 fragBrithness;
 out vec2 fragUV;

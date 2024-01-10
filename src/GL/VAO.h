@@ -13,15 +13,14 @@ namespace GL {
     private:
         GLuint mVAO = 0;
         GLuint mVBO = 0;
-        GLuint mVBO1 = 0;
         GLuint mEBO = 0;
 
-        int* attributes;
-        size_t vertex_size;
-        unsigned attributes_count;
+        int attributes[3] = {};
+        size_t vertex_size = 0;
+        unsigned attributes_count = 0;
 
     public:
-        enum Type {VAOchunk, Test};
+        enum Type {VAOchunk, VAOcrosshair, Test};
 
         VAO(Type type);
         VAO(const VAO&) = delete;
@@ -30,13 +29,12 @@ namespace GL {
         void bind();
         void draw(unsigned primitiveType, unsigned indexes_count);
 
-        void initializeVBO_vertices(const float* vertices, unsigned vertices_count);
-        void test(const GLushort* color, unsigned vertices_count);
+        void initializeVBO(const GLushort* color, unsigned vertices_count);
         void initializeEBO(const GLushort* data, unsigned indexes_count);
 
         void postInitialization();
 
-        void deinitializeVBO_vertices();
+        void deinitializeVBO();
         void deinitializeEBO();
     };
 }

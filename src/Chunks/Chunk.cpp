@@ -1,6 +1,7 @@
 #include "Chunk.h"
 
 #include <math.h>
+#include <iostream>
 
 Chunk::Chunk() {
     voxels = new Voxel[CHUNK_VOL]();
@@ -9,10 +10,9 @@ Chunk::Chunk() {
     for (int y = 0; y < CHUNK_H; y++) {
         for (int z = 0; z < CHUNK_D; z++) {
             for (int x = 0; x < CHUNK_W; x++) {
-                id = y <= (sin(x * 0.3f) * 0.5f + 0.5f) * 10;
+                id = y <= 10;
                 if (y <= 2)
                     id = 4;
-
 
                 // voxels[y][z][x] := voxels[(y * CHUNK_DEPTH + z) * CHUNK_WIDTH + x]
                 voxels[(y * CHUNK_D + z) * CHUNK_W + x].id = id;
@@ -20,7 +20,7 @@ Chunk::Chunk() {
         }
     }
 
-    vertices = new GLushort[ATTRIBUTES_COUNT * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1)]();
+    vertices = new GLushort[6 * ATTRIBUTES_COUNT * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1)]();
     indexes = new GLushort[6 * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1)]();
 }
 

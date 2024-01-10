@@ -48,11 +48,3 @@ void GL::Texture::setImage(const Image& image) {
 
     glBindTexture(GL_TEXTURE_2D, 0);
 }
-
-void GL::Texture::MakeWindowRegionTexture() {
-    glBindTexture(GL_TEXTURE_2D, mHandle);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 32, 32, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
