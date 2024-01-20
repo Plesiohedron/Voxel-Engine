@@ -141,7 +141,8 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Window\Window.cpp" />
     <ClCompile Include="src\GL\VAO.cpp" />
-    <ClCompile Include="src\GL\Texture.cpp" />
+    <ClCompile Include="src\GL\Texture2D.cpp" />
+    <ClCompile Include="src\GL\Texture3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\GUI\Crosshair.h" />
@@ -155,7 +156,8 @@
     <ClInclude Include="src\Engine\Engine.h" />
     <ClInclude Include="src\Window\Window.h" />
     <ClInclude Include="src\GL\VAO.h" />
-    <ClInclude Include="src\GL\Texture.h" />
+    <ClInclude Include="src\GL\Texture2D.h" />
+    <ClInclude Include="src\GL\Texture3D.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -163,6 +165,13 @@
     <None Include="res\glsl\Crosshair.vert" />
     <None Include="res\glsl\Shader.frag" />
     <None Include="res\glsl\Shader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\texture\Atlas.png" />
+    <Image Include="res\texture\Debug.png" />
+    <Image Include="res\texture\dirt.png" />
+    <Image Include="res\texture\icons.png" />
+    <Image Include="res\texture\stone.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

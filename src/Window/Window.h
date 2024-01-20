@@ -6,24 +6,24 @@
 #include <stdexcept>
 
 class Window {
+friend class Events;
+friend class Engine;
+
+private:
     static GLFWwindow* mWindow;
 
     static int mWidth;
     static int mHeight;
-
 public:
-    friend class Events;
-    friend class Engine;
-
     static bool isIconfied;
     static bool isResized;
 
-    static void initialize(int width, int height, const char* title);
-    static void deinitialize();
+    static void Initialize(int windowWidth, int windowHeight, const char* windowTitle);
+    static void Deinitialize();
 
-    static bool isShouldClose();
-    static void setShouldClose(bool flag);
-    static void swapBuffers();
+    static bool IsShouldClose();
+    static void SetShouldClose(bool flag);
+    static void SwapBuffers();
 
-    static float getAspect();
+    static float GetAspect();
 };

@@ -26,15 +26,15 @@ namespace GL {
         VAO(const VAO&) = delete;
         ~VAO();
 
-        void bind();
-        void draw(unsigned primitiveType, unsigned indexes_count);
+        void Bind();
+        void Draw(unsigned primitiveType, unsigned indexes_count);
 
-        void initializeVBO(const GLushort* color, unsigned vertices_count);
-        void initializeEBO(const GLushort* data, unsigned indexes_count);
+        void InitializeVBO(const GLushort* color, unsigned vertices_count);
+        void InitializeEBO(const GLushort* data, unsigned indexes_count);
 
-        void postInitialization();
+        void PostInitialization();
 
-        void deinitializeVBO();
-        void deinitializeEBO();
+        void DeinitializeVBO();
+        void DeinitializeEBO();
     };
 }

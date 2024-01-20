@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../GL/Program.h"
-#include "../GL/Texture.h"
+#include "../GL/Texture3D.h"
 #include "../GL/VAO.h"
 #include "../Chunks/Chunk.h"
 #include "../GUI/Crosshair.h"
@@ -12,17 +12,15 @@ private:
     static float fovCamera;
     static glm::mat4 model;
 
-    static GLint uniformTextureLoc;
+    static std::unique_ptr<GL::Texture3D> textureAtlas;
+    static std::unique_ptr<GL::Program> shaderProgram;
 
+    static GLint uniformTextureLoc;
     static GLint uniformProjectionLoc;
     static GLint uniformViewLoc;
     static GLint uniformModelLoc;
-
-    static GL::Texture textureAtlas;
-
 public:
-    static void initialize(int width, int height, const char* title);
-    static void deinitialize();
-
-    static void mainLoop();
+    static void Initialize(int width, int height, const char* title);
+    static void MainLoop();
+    static void Deinitialize();
 };

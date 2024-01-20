@@ -5,16 +5,16 @@
 int main() {
 
     try {
-        Engine::initialize(1280, 720, "Window");
-        Engine::mainLoop();
+        Engine::Initialize(1280, 720, "Window");
+        Engine::MainLoop();
     } catch (std::runtime_error& error) {
         std::cout << "Fatal Error" << std::endl;
         std::cout << error.what() << std::endl;
 
-        Engine::deinitialize();
+        Engine::Deinitialize();
         return -1;
     }
 
-    Engine::deinitialize();
+    Engine::Deinitialize();
     return 0;
 }

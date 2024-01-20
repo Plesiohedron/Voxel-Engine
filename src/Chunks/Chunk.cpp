@@ -10,7 +10,7 @@ Chunk::Chunk() {
     for (int y = 0; y < CHUNK_H; y++) {
         for (int z = 0; z < CHUNK_D; z++) {
             for (int x = 0; x < CHUNK_W; x++) {
-                id = y <= 10;
+                id = y <= sin(0.1 * x) * 10;
                 if (y <= 2)
                     id = 4;
 

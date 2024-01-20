@@ -28,7 +28,7 @@ public:
     static void rotate(float x, float y, float z);
 
     static glm::mat4 getProjection() {
-        return glm::perspective(mFOV, Window::getAspect(), 0.01f, 150.0f);
+        return glm::perspective(mFOV, Window::GetAspect(), 0.01f, 150.0f);
     }
 
     static glm::mat4 getView() {

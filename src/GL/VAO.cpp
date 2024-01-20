@@ -38,11 +38,11 @@ GL::VAO::~VAO() {
     glDeleteVertexArrays(1, &mVAO);
 }
 
-void GL::VAO::bind() {
+void GL::VAO::Bind() {
     glBindVertexArray(mVAO);
 }
 
-void GL::VAO::draw(unsigned primitiveType, unsigned indexes_count) {
+void GL::VAO::Draw(unsigned primitiveType, unsigned indexes_count) {
     assert(mEBO != 0);
 
     glBindVertexArray(mVAO);
@@ -62,7 +62,7 @@ void GL::VAO::draw(unsigned primitiveType, unsigned indexes_count) {
     glBindVertexArray(0);
 }
 
-void GL::VAO::initializeVBO(const GLushort* vertices, unsigned vertices_count) {
+void GL::VAO::InitializeVBO(const GLushort* vertices, unsigned vertices_count) {
     glGenBuffers(1, &mVBO);
     glBindBuffer(GL_ARRAY_BUFFER, mVBO);
     glBufferData(GL_ARRAY_BUFFER, vertices_count * vertex_size * sizeof(GLushort), vertices, GL_STATIC_DRAW);
@@ -74,25 +74,25 @@ void GL::VAO::initializeVBO(const GLushort* vertices, unsigned vertices_count) {
     }
 }
 
-void GL::VAO::initializeEBO(const GLushort* indexes, unsigned indexes_count) {
+void GL::VAO::InitializeEBO(const GLushort* indexes, unsigned indexes_count) {
     glGenBuffers(1, &mEBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexes_count * sizeof(GLushort), indexes, GL_STATIC_DRAW);
 }
 
-void GL::VAO::postInitialization() {
+void GL::VAO::PostInitialization() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
-void GL::VAO::deinitializeVBO() {
+void GL::VAO::DeinitializeVBO() {
     glBindBuffer(GL_ARRAY_BUFFER, mVBO);
     glDeleteBuffers(1, &mVBO);
     mVBO = 0;
 }
 
-void GL::VAO::deinitializeEBO() {
+void GL::VAO::DeinitializeEBO() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
     glDeleteBuffers(1, &mEBO);
     mEBO = 0;

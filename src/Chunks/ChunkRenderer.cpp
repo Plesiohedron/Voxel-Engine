@@ -6,9 +6,9 @@
 #define VOXEL(X, Y, Z) (chunk.voxels[((Y) * CHUNK_D + (Z)) * CHUNK_W + (X)])
 #define IS_BLOCKED(X, Y, Z) ((IS_IN(X, Y, Z)) && VOXEL(X, Y, Z).id)
 
-#define VERTEX(idx, r, g, b, s, u, v, x, y, z)\
+#define VERTEX(idx, r, g, b, s, u, v, x, y, z, id)\
     chunk.vertices[idx + 0] = ((x << 10) | (y << 5) | z);\
-    chunk.vertices[idx + 1] = ((u << 5) | v);\
+    chunk.vertices[idx + 1] = ((id << 10) | (u << 5) | v);\
     chunk.vertices[idx + 2] = ((r << 12) | (g << 8) | (b << 4) | s);\
     idx += VERTEX_SIZE;
 
@@ -38,16 +38,18 @@ void ChunkRenderer::render(Chunk& chunk) {
                 if (!id)
                     continue;
 
-                UVx = ((id - 1) % 16);
-                UVy = ((id - 1) / 16);
+                --id;
+
+                UVx = (id % 16);
+                UVy = (id / 16);
 
                 if (!IS_BLOCKED(x - 1, y, z)) {
                     brithness = 13;
 
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x, y + 1, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x, y + 1, z);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x, y,     z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x, y,     z);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x, y + 1, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x, y + 1, z,     id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x, y,     z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x, y,     z,     id);
 
                     INDEX(chunk.currentIndexesCount, index);
                 }
@@ -55,10 +57,10 @@ void ChunkRenderer::render(Chunk& chunk) {
                 if (!IS_BLOCKED(x + 1, y, z)) {
                     brithness = 14;
 
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x + 1, y + 1, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x + 1, y,     z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y + 1, z);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y,     z);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x + 1, y + 1, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x + 1, y,     z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y + 1, z,     id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y,     z,     id);
 
                     INDEX(chunk.currentIndexesCount, index);
                 }
@@ -66,10 +68,10 @@ void ChunkRenderer::render(Chunk& chunk) {
                 if (!IS_BLOCKED(x, y - 1, z)) {
                     brithness = 11;
 
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x,     y, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y, z);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x,     y, z);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x,     y, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y, z,     id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x,     y, z,     id);
 
                     INDEX(chunk.currentIndexesCount, index);
                 }
@@ -77,10 +79,10 @@ void ChunkRenderer::render(Chunk& chunk) {
                 if (!IS_BLOCKED(x, y + 1, z)) {
                     brithness = 15;
 
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y + 1, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y + 1, z);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x,     y + 1, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x,     y + 1, z);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y + 1, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y + 1, z,     id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x,     y + 1, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x,     y + 1, z,     id);
 
                     INDEX(chunk.currentIndexesCount, index);
                 }
@@ -88,10 +90,10 @@ void ChunkRenderer::render(Chunk& chunk) {
                 if (!IS_BLOCKED(x, y, z - 1)) {
                     brithness = 12;
 
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x + 1, y + 1, z);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x + 1, y,     z);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x,     y + 1, z);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x,     y,     z);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x + 1, y + 1, z, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x + 1, y,     z, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x,     y + 1, z, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x,     y,     z, id);
 
                     INDEX(chunk.currentIndexesCount, index);
                 }
@@ -99,10 +101,10 @@ void ChunkRenderer::render(Chunk& chunk) {
                 if (!IS_BLOCKED(x, y, z + 1)) {
                     brithness = 14;
 
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y + 1, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x,     y + 1, z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y,     z + 1);
-                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x,     y,     z + 1);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy,     x + 1, y + 1, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy,     x,     y + 1, z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx + 1, UVy + 1, x + 1, y,     z + 1, id);
+                    VERTEX(chunk.currentVerticesCount, brithness, brithness, brithness, 15, UVx,     UVy + 1, x,     y,     z + 1, id);
 
                     INDEX(chunk.currentIndexesCount, index);
                 }
