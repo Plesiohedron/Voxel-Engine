@@ -4,6 +4,9 @@
 #include "../Camera/Camera.h"
 #include "../Chunks/ChunkRenderer.h"
 
+std::vector<GLushort> Engine::vertices;
+std::vector<GLushort> Engine::indexes;
+
 glm::vec3 Engine::posCamera = {0.0f, 0.0f, -5.0f};
 float Engine::fovCamera = glm::radians(70.0f);
 glm::mat4 Engine::model(1.0f);
@@ -37,19 +40,22 @@ void Engine::Initialize(int width, int height, const char* title) {
 
     textureAtlas = std::make_unique<GL::Texture3D>();
     textureAtlas->setImage(Image::LoadImage("Atlas.png"));
+
+    vertices.reserve(6 * ATTRIBUTES_COUNT * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1));
+    indexes.reserve(6 * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1));
 }
 
 void Engine::MainLoop() {
     Chunk chunk;
     Chunk* neighbouringСhunks[8] = {nullptr};
 
-    ChunkRenderer::render(chunk);
+    ChunkRenderer::Render(chunk, vertices, indexes);
 
     GL::VAO chunkVAO(GL::VAO::Type::VAOchunk);
 
     chunkVAO.Bind();
-    chunkVAO.InitializeVBO(chunk.vertices, chunk.currentVerticesCount);
-    chunkVAO.InitializeEBO(chunk.indexes, chunk.currentIndexesCount);
+    chunkVAO.InitializeVBO(vertices);
+    chunkVAO.InitializeEBO(indexes);
     chunkVAO.PostInitialization();
 
     /*
@@ -143,9 +149,11 @@ void Engine::MainLoop() {
             textureAtlas->bind();
             shaderProgram->uniformTexture(uniformTextureLoc, 0);
 
-            chunkVAO.Draw(GL_TRIANGLES, chunk.currentIndexesCount);
-
-            //test.Draw(GL_TRIANGLES, 6);
+            if (Events::KeyIsPressed(GLFW_KEY_F)) {
+                chunkVAO.Draw(GL_LINES);
+            } else {
+                chunkVAO.Draw(GL_TRIANGLES);
+            }
 
             Crosshair::Draw(Events::cursor_is_moving, Events::cursor_is_locked);
         }

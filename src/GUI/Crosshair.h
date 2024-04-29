@@ -28,8 +28,8 @@ private:
     static GLuint uniformCrosshairRegionTextureLoc;
     static GLint uniformModelLoc;
 
-    static GLushort vertices[8];
-    static GLushort indexes[6];
+    static std::vector<GLushort> vertices;
+    static std::vector<GLushort> indexes;
 
     static void MakeCrosshairRegionTexture();
 

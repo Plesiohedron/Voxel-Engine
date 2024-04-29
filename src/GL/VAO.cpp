@@ -42,42 +42,44 @@ void GL::VAO::Bind() {
     glBindVertexArray(mVAO);
 }
 
-void GL::VAO::Draw(unsigned primitiveType, unsigned indexes_count) {
+void GL::VAO::Draw(unsigned primitiveType) {
     assert(mEBO != 0);
 
     glBindVertexArray(mVAO);
 
-    for (int i = 0; i < attributes_count; i++) {
+    for (int i = 0; i < attributes_count; ++i) {
         glEnableVertexAttribArray(i);
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-    glDrawElements(primitiveType, indexes_count, GL_UNSIGNED_SHORT, nullptr);
+    glDrawElements(primitiveType, mIndexesCount, GL_UNSIGNED_SHORT, nullptr);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    for (int i = 0; i < attributes_count; i++) {
+    for (int i = 0; i < attributes_count; ++i) {
         glDisableVertexAttribArray(i);
     }
 
     glBindVertexArray(0);
 }
 
-void GL::VAO::InitializeVBO(const GLushort* vertices, unsigned vertices_count) {
+void GL::VAO::InitializeVBO(const std::vector<GLushort>& verticesData) {
     glGenBuffers(1, &mVBO);
     glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices_count * vertex_size * sizeof(GLushort), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, verticesData.size() * vertex_size * sizeof(GLushort), verticesData.data(), GL_STATIC_DRAW);
 
     unsigned offset = 0;
-    for (int i = 0; i < attributes_count; i++) {
+    for (int i = 0; i < attributes_count; ++i) {
         glVertexAttribIPointer(i, 1, GL_UNSIGNED_SHORT, vertex_size * sizeof(GLushort), reinterpret_cast<GLvoid*>(offset * sizeof(GLushort)));
         offset += attributes[i];
     }
 }
 
-void GL::VAO::InitializeEBO(const GLushort* indexes, unsigned indexes_count) {
+void GL::VAO::InitializeEBO(const std::vector<GLushort>& indexesData) {
     glGenBuffers(1, &mEBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexes_count * sizeof(GLushort), indexes, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexesData.size() * sizeof(GLushort), indexesData.data(), GL_STATIC_DRAW);
+
+    mIndexesCount = indexesData.size();
 }
 
 void GL::VAO::PostInitialization() {

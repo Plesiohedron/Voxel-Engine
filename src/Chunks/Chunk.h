@@ -4,6 +4,8 @@
 
 #include <GL/glew.h>
 
+#include <vector>
+
 #define CHUNK_W 16
 #define CHUNK_H 16
 #define CHUNK_D 16
@@ -12,13 +14,9 @@
 
 class Chunk {
 public:
-    unsigned currentVerticesCount = 0;
-    unsigned currentIndexesCount = 0;
-
     Voxel* voxels;
 
-    GLushort* vertices;
-    GLushort* indexes;
+    std::vector<std::vector<std::vector<std::vector<std::vector<uint32_t>>>>> meshData;
 
     Chunk();
     ~Chunk();

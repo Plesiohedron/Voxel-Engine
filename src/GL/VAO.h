@@ -18,6 +18,7 @@ namespace GL {
         int attributes[3] = {};
         size_t vertex_size = 0;
         unsigned attributes_count = 0;
+        size_t mIndexesCount = 0;
 
     public:
         enum Type {VAOchunk, VAOcrosshair, Test};
@@ -27,10 +28,10 @@ namespace GL {
         ~VAO();
 
         void Bind();
-        void Draw(unsigned primitiveType, unsigned indexes_count);
+        void Draw(unsigned primitiveType);
 
-        void InitializeVBO(const GLushort* color, unsigned vertices_count);
-        void InitializeEBO(const GLushort* data, unsigned indexes_count);
+        void InitializeVBO(const std::vector<GLushort>& verticesData);
+        void InitializeEBO(const std::vector<GLushort>& indexesData);
 
         void PostInitialization();
 

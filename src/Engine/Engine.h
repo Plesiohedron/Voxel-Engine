@@ -8,6 +8,9 @@
 
 class Engine {
 private:
+    static std::vector<GLushort> vertices;
+    static std::vector<GLushort> indexes;
+
     static glm::vec3 posCamera;
     static float fovCamera;
     static glm::mat4 model;

@@ -14,13 +14,13 @@ GLuint Crosshair::uniformCrosshairRegionTextureLoc;
 GLint Crosshair::uniformModelLoc;
 
 //attributes UV and position
-GLushort Crosshair::vertices[8] = {
+std::vector<GLushort> Crosshair::vertices = {
     (0 << 10) | (0 << 5) | 0, (0 << 5) | 1,
     (1 << 10) | (0 << 5) | 0, (1 << 5) | 1,
     (0 << 10) | (1 << 5) | 0, (0 << 5) | 0,
     (1 << 10) | (1 << 5) | 0, (1 << 5) | 0,
 };
-GLushort Crosshair::indexes[6] = {
+std::vector<GLushort> Crosshair::indexes = {
     0, 1, 2, 2, 1, 3
 };
 
@@ -50,8 +50,8 @@ void Crosshair::Initialize(int width, int height) {
     crosshairRegionTexture->set();
 
     crosshairVAO->Bind();
-    crosshairVAO->InitializeVBO(vertices, 8);
-    crosshairVAO->InitializeEBO(indexes, 6);
+    crosshairVAO->InitializeVBO(vertices);
+    crosshairVAO->InitializeEBO(indexes);
     crosshairVAO->PostInitialization();
 
     UpdateModel(width, height);
@@ -87,5 +87,5 @@ void Crosshair::Draw(bool cursorIsMoving, bool cursorIsLocked) {
     crosshairRegionTexture->bind();
     crosshairShader->uniformTexture(uniformCrosshairRegionTextureLoc, 1);
 
-    crosshairVAO->Draw(GL_TRIANGLES, 6);
+    crosshairVAO->Draw(GL_TRIANGLES);
 }
