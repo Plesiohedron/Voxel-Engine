@@ -5,16 +5,14 @@
 int main() {
 
     try {
-        Engine::Initialize(1280, 720, "Window");
-        Engine::MainLoop();
-    } catch (std::runtime_error& error) {
-        std::cout << "Fatal Error" << std::endl;
-        std::cout << error.what() << std::endl;
-
-        Engine::Deinitialize();
-        return -1;
+        Engine& engine = Engine::Instance(1280, 720, "Window");
+        engine.MainLoop();
+    } catch (const GLFWError& e) {
+        std::cerr << e.what() << std::endl;
+    } catch (const OpenGLError& e) {
+        std::cerr << e.what() << std::endl;
+    } catch (const STBImageError& e) {
+        std::cerr << e.what() << std::endl;
     }
 
-    Engine::Deinitialize();
-    return 0;
 }

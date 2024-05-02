@@ -1,67 +1,32 @@
 #include "Engine.h"
-#include "../Window/Window.h"
-#include "../Events/Events.h"
-#include "../Camera/Camera.h"
-#include "../Chunks/ChunkRenderer.h"
 
-std::vector<GLushort> Engine::vertices;
-std::vector<GLushort> Engine::indexes;
+Engine::Engine(const int window_width, const int window_height, const char* window_title)
+    : window_{window_width, window_height, window_title}, camera_{{0.0f, 0.0f, -5.0f}, glm::radians(90.0f)}, GUI_{} {
 
-glm::vec3 Engine::posCamera = {0.0f, 0.0f, -5.0f};
-float Engine::fovCamera = glm::radians(70.0f);
-glm::mat4 Engine::model(1.0f);
+    camera_.Rotate(0.0f, glm::radians(180.0f), 0.0f);
+    camera_.camera_rotation_X = glm::radians(180.0f);
 
-GLint Engine::uniformTextureLoc;
-GLint Engine::uniformProjectionLoc;
-GLint Engine::uniformViewLoc;
-GLint Engine::uniformModelLoc;
+    shader_program_ = std::make_unique<GL::Program>("Chunks");
+    shader_program_->BindAttribute(0, "color");
+    shader_program_->BindAttribute(1, "UV");
+    shader_program_->BindAttribute(2, "position");
+    shader_program_->Link();
 
-std::unique_ptr<GL::Texture3D> Engine::textureAtlas;
-std::unique_ptr<GL::Program> Engine::shaderProgram;
+    uniform_texture_loc_ = shader_program_->GetUniformLocation("texture0");
+    uniform_projection_loc_ = shader_program_->GetUniformLocation("projection");
+    uniform_view_loc_ = shader_program_->GetUniformLocation("view");
+    uniform_model_loc_ = shader_program_->GetUniformLocation("model");
 
-void Engine::Initialize(int width, int height, const char* title) {
-    Window::Initialize(width, height, title);
-    Events::Initialize();
-    Camera::initialize(posCamera, fovCamera);
-    Camera::rotate(0.0f, glm::radians(180.0f), 0.0f);
-    Camera::cameraRotationX = glm::radians(180.0f);
-    Crosshair::Initialize(Window::mWidth, Window::mHeight);
+    texture_atlas_ = std::make_unique<GL::Texture3D>();
+    texture_atlas_->SetAtlas(Image::LoadImage("Atlas.png"));
 
-    shaderProgram = std::make_unique<GL::Program>("Shader");
-    shaderProgram->bindAttribute(0, "color");
-    shaderProgram->bindAttribute(1, "UV");
-    shaderProgram->bindAttribute(2, "position");
-    shaderProgram->link();
-
-    uniformTextureLoc = shaderProgram->getUniformLocation("texture0");
-    uniformProjectionLoc = shaderProgram->getUniformLocation("projection");
-    uniformViewLoc = shaderProgram->getUniformLocation("view");
-    uniformModelLoc = shaderProgram->getUniformLocation("model");
-
-    textureAtlas = std::make_unique<GL::Texture3D>();
-    textureAtlas->setImage(Image::LoadImage("Atlas.png"));
-
-    vertices.reserve(6 * ATTRIBUTES_COUNT * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1));
-    indexes.reserve(6 * (CHUNK_H + 1) * (CHUNK_D + 1) * (CHUNK_W + 1));
+    chunk_storage_ = new ChunkStorage(2, {0, 0, 0});
 }
 
 void Engine::MainLoop() {
-    Chunk chunk;
-    Chunk* neighbouringСhunks[8] = {nullptr};
+    /*GL::VAO test;
 
-    ChunkRenderer::Render(chunk, vertices, indexes);
-
-    GL::VAO chunkVAO(GL::VAO::Type::VAOchunk);
-
-    chunkVAO.Bind();
-    chunkVAO.InitializeVBO(vertices);
-    chunkVAO.InitializeEBO(indexes);
-    chunkVAO.PostInitialization();
-
-    /*
-    GL::VAO test(GL::VAO::Type::Test);
-
-    GLushort vertices[12] = {
+    std::vector<GLushort> vertices = {
         ((0 << 10) | (1 << 5) | 0), ((1 << 10) | (0 << 5) | 0), ((15 << 12) | (15 << 8) | (15 << 4) | 15),
         ((0 << 10) | (0 << 5) | 0), ((1 << 10) | (0 << 5) | 1), ((15 << 12) | (15 << 8) | (15 << 4) | 15),
 
@@ -69,15 +34,19 @@ void Engine::MainLoop() {
         ((2 << 10) | (0 << 5) | 0), ((1 << 10) | (2 << 5) | 1), ((15 << 12) | (15 << 8) | (15 << 4) | 15),
     };
 
-    GLushort indexes[6] = {
+    std::vector<GLushort> indexes = {
         0, 2, 1, 1, 2, 3
     };
 
     test.Bind();
-    test.InitializeVBO(vertices, 12);
-    test.InitializeEBO(indexes, 6);
-    test.PostInitialization();
-    */
+    test.InitializeChunkVBO(vertices);
+    test.InitializeEBO(indexes);
+    test.PostInitialization();*/
+
+    for (const auto chunk : chunk_storage_->chunks) {
+        chunk->Render();
+    }
+    
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -86,83 +55,97 @@ void Engine::MainLoop() {
     glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
 
 
-    float lastTime = static_cast<float>(glfwGetTime());
-    float deltaTime = 0.0f;
-    float currentTime = 0.0f;
+    float last_time = static_cast<float>(glfwGetTime());
+    float delta_time = 0.0f;
+    float current_time = 0.0f;
 
     float speed = 5.0f;
 
-    while (!Window::IsShouldClose()) {
-        currentTime = static_cast<float>(glfwGetTime());
-        deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+    while (!window_.IsShouldClose()) {
+        current_time = static_cast<float>(glfwGetTime());
+        delta_time = current_time - last_time;
+        last_time = current_time;
 
-        if (!Window::isIconfied) {
+        if (!window_.is_iconfied) {
             if (Events::KeyIsClicked(GLFW_KEY_ESCAPE)) {
-                Window::SetShouldClose(true);
+                window_.SetShouldClose(true);
             }
             if (Events::KeyIsClicked(GLFW_KEY_TAB)) {
                 Events::SwitchCursor();
             }
 
             if (Events::KeyIsPressed(GLFW_KEY_W)) {
-                Camera::position += Camera::vectorFront * deltaTime * speed;
+                camera_.position += camera_.vector_front * delta_time * speed;
             }
             if (Events::KeyIsPressed(GLFW_KEY_S)) {
-                Camera::position -= Camera::vectorFront * deltaTime * speed;
+                camera_.position -= camera_.vector_front * delta_time * speed;
             }
             if (Events::KeyIsPressed(GLFW_KEY_D)) {
-                Camera::position += Camera::vectorRight * deltaTime * speed;
+                camera_.position += camera_.vector_right * delta_time * speed;
             }
             if (Events::KeyIsPressed(GLFW_KEY_A)) {
-                Camera::position -= Camera::vectorRight * deltaTime * speed;
+                camera_.position -= camera_.vector_right * delta_time * speed;
+            }
+            if (Events::KeyIsPressed(GLFW_KEY_SPACE)) {
+                camera_.position.y += delta_time * speed;
+            }
+            if (Events::KeyIsPressed(GLFW_KEY_LEFT_SHIFT)) {
+                camera_.position.y -= delta_time * speed;
             }
 
-            if (Window::isResized) {
-                Crosshair::UpdateModel(Window::mWidth, Window::mHeight);
-                Window::isResized = false;
+            if (window_.is_resized) {
+                GUI_.crosshair.UpdateModel();
+                window_.is_resized = false;
             }
 
             if (Events::cursor_is_locked) {
-                Camera::cameraRotationX += -2 * Events::cursor_delta_x / Window::mHeight;
-                Camera::cameraRotationY += -2 * Events::cursor_delta_y / Window::mHeight;
+                camera_.camera_rotation_X += -2 * Events::cursor_delta_x / window_.height;
+                camera_.camera_rotation_Y += -2 * Events::cursor_delta_y / window_.height;
 
-                if (Camera::cameraRotationY < -glm::radians(90.0f)) {
-                    Camera::cameraRotationY = -glm::radians(90.0f);
-                }
-                else if (Camera::cameraRotationY > glm::radians(90.0f)) {
-                    Camera::cameraRotationY = glm::radians(90.0f);
+                if (camera_.camera_rotation_Y < -glm::radians(90.0f)) {
+                    camera_.camera_rotation_Y = -glm::radians(90.0f);
+                } else if (camera_.camera_rotation_Y > glm::radians(90.0f)) {
+                    camera_.camera_rotation_Y = glm::radians(90.0f);
                 }
 
-                Camera::rotation = glm::mat4(1.0f);
-                Camera::rotate(Camera::cameraRotationY, Camera::cameraRotationX, 0.0f);
+                camera_.rotation = glm::mat4(1.0f);
+                camera_.Rotate(camera_.camera_rotation_Y, camera_.camera_rotation_X, 0.0f);
+            }
+
+            if (Events::KeyIsPressed(GLFW_KEY_F)) {
+                debug_mode_ = GL_LINES;
+            } else {
+                debug_mode_ = GL_TRIANGLES;
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            shaderProgram->use();
-            shaderProgram->uniformMatrix(uniformProjectionLoc, Camera::getProjection());
-            shaderProgram->uniformMatrix(uniformViewLoc, Camera::getView());
-            shaderProgram->uniformMatrix(uniformModelLoc, model);
+            shader_program_->Use();
+            shader_program_->UniformMatrix(uniform_projection_loc_, camera_.GetProjection());
+            shader_program_->UniformMatrix(uniform_view_loc_, camera_.GetView());
 
             glActiveTexture(GL_TEXTURE0);
-            textureAtlas->bind();
-            shaderProgram->uniformTexture(uniformTextureLoc, 0);
+            texture_atlas_->Bind();
+            shader_program_->UniformTexture(uniform_texture_loc_, 0);
 
-            if (Events::KeyIsPressed(GLFW_KEY_F)) {
-                chunkVAO.Draw(GL_LINES);
-            } else {
-                chunkVAO.Draw(GL_TRIANGLES);
+            for (const Chunk* chunk : chunk_storage_->chunks) {
+                chunk_storage_->model = glm::translate(glm::mat4(1.0f), glm::vec3(chunk->global_coordinate_X * Chunk::WIDTH,
+                                                                         chunk->global_coordinate_Y * Chunk::HEIGHT,
+                                                                         chunk->global_coordinate_Z * Chunk::DEPTH));
+
+                shader_program_->UniformMatrix(uniform_model_loc_, chunk_storage_->model);
+                
+                chunk->Draw(debug_mode_);
             }
 
-            Crosshair::Draw(Events::cursor_is_moving, Events::cursor_is_locked);
+            GUI_.crosshair.Draw();
         }
 
-        Window::SwapBuffers();
+        window_.SwapBuffers();
         Events::PollEvents();
     }
 }
 
-void Engine::Deinitialize() {
-    Window::Deinitialize();
+Engine::~Engine() {
+    delete chunk_storage_;
 }

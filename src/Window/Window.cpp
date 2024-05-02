@@ -1,19 +1,11 @@
 #include "Window.h"
 
-GLFWwindow* Window::mWindow;
+#include "../Events/Events.h"
 
-int Window::mWidth;
-int Window::mHeight;
-
-bool Window::isIconfied;
-bool Window::isResized;
-
-void Window::Initialize(int windowWidth, int windowHeight, const char* windowTitle) {
-    mWidth = windowWidth;
-    mHeight = windowHeight;
-
+Window::Window(const int window_width, const int window_height, const char* window_title) 
+    : width(window_width), height(window_height) {
     if (!glfwInit()) {
-        throw std::runtime_error("Failed to initialize GLFW!");
+        throw GLFWError("Failed to initialize GLFW!");
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -22,38 +14,40 @@ void Window::Initialize(int windowWidth, int windowHeight, const char* windowTit
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
 
-    mWindow = glfwCreateWindow(mWidth, mHeight, windowTitle, nullptr, nullptr);
-    if (!mWindow) {
-        throw std::runtime_error("Failed to create window!");
+    window = glfwCreateWindow(width, height, window_title, nullptr, nullptr);
+    if (!window) {
+        throw GLFWError("Failed to create window!");
     }
 
-    glfwMakeContextCurrent(mWindow);
+    glfwMakeContextCurrent(window);
 
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
-        throw std::runtime_error("Failed to initialize GLEW!");
+        throw OpenGLError("Failed to initialize GLEW!");
     }
 
-    glViewport(0, 0, mWidth, mHeight);
+    glViewport(0, 0, width, height);
+
+    Events::Initialize(this);
 }
 
-bool Window::IsShouldClose() {
-    return glfwWindowShouldClose(mWindow);
+bool Window::IsShouldClose() const {
+    return glfwWindowShouldClose(window);
 }
 
-void Window::SetShouldClose(bool flag) {
-    glfwSetWindowShouldClose(mWindow, flag);
+void Window::SetShouldClose(const bool flag) const {
+    glfwSetWindowShouldClose(window, flag);
 }
 
-void Window::SwapBuffers() {
-    glfwSwapBuffers(mWindow);
+void Window::SwapBuffers() const {
+    glfwSwapBuffers(window);
 }
 
-float Window::GetAspect() {
-    return static_cast<float>(mWidth) / mHeight;
+float Window::GetAspect() const {
+    return static_cast<float>(width) / height;
 }
 
-void Window::Deinitialize() {
-    glfwDestroyWindow(mWindow);
+Window::~Window() {
+    glfwDestroyWindow(window);
     glfwTerminate();
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
 
 #include <GL/glew.h>
@@ -11,31 +10,31 @@
 namespace GL {
     class VAO {
     private:
-        GLuint mVAO = 0;
-        GLuint mVBO = 0;
-        GLuint mEBO = 0;
+        GLuint VAO_ = 0;
+        std::vector<GLuint> VBOs_;
+        GLuint EBO_ = 0;
+        unsigned int indexes_count_ = 0;
+        unsigned int attributes_count_ = 0;
 
-        int attributes[3] = {};
-        size_t vertex_size = 0;
-        unsigned attributes_count = 0;
-        size_t mIndexesCount = 0;
+        static const int CHUNK_VERTEX_SIZE_ = 3;
+        static const int CHUNK_ATTRIBUTES_COUNT_ = 3;
 
     public:
-        enum Type {VAOchunk, VAOcrosshair, Test};
-
-        VAO(Type type);
+        VAO();
         VAO(const VAO&) = delete;
         ~VAO();
 
-        void Bind();
-        void Draw(unsigned primitiveType);
+        void Bind() const;
+        void Draw(const unsigned int primitive_type) const;
 
-        void InitializeVBO(const std::vector<GLushort>& verticesData);
-        void InitializeEBO(const std::vector<GLushort>& indexesData);
-
-        void PostInitialization();
+        void InitializeBasicVBO(const std::vector<float>& vertices_data);
+        void InitializeBasicVBO(const std::vector<glm::vec2>& vertices_data);
+        void InitializeBasicVBO(const std::vector<glm::vec3>& vertices_data);
+        void InitializeChunkVBO(const std::vector<GLushort>& vertices_data);
+        void InitializeEBO(const std::vector<GLushort>& indexes_data);
+        void PostInitialization() const;
 
         void DeinitializeVBO();
         void DeinitializeEBO();
     };
-}
+}  // namespace GL

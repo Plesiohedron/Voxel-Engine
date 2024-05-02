@@ -1,27 +1,30 @@
 #include "Events.h"
 
-#include <iostream>
+namespace Events {
+    const int MOUSE_BUTTONS_OFFSET = 1024;
+    bool keys[1032]{false};
 
-bool Events::keys[1032] = {false};
+    unsigned long long int current_frame = 0;
+    unsigned long long int frames[1032]{0};
 
-float Events::cursor_x = 0.0f;
-float Events::cursor_y = 0.0f;
+    float cursor_x = 0.0f;
+    float cursor_y = 0.0f;
+    float cursor_delta_x = 0.0f;
+    float cursor_delta_y = 0.0f;
+    bool cursor_is_moving = false;
+    bool cursor_is_locked = false;
 
-float Events::cursor_delta_x = 0.0f;
-float Events::cursor_delta_y = 0.0f;
+    Window* window = nullptr;
+}  // namespace Events
 
-bool Events::cursor_is_moving = false;
-bool Events::cursor_is_locked = false;
+void Events::Initialize(Window* window) {
+    Events::window = window;
 
-unsigned long long int Events::current_frame = 0;
-unsigned long long int Events::frames[1032] = {0};
-
-void Events::Initialize() {
-    glfwSetWindowSizeCallback(Window::mWindow, WindowResizeCallback);
-    glfwSetKeyCallback(Window::mWindow, KeyCallback);
-    glfwSetMouseButtonCallback(Window::mWindow, MouseCallback);
-    glfwSetCursorPosCallback(Window::mWindow, CursorPosCallback);
-    glfwSetWindowIconifyCallback(Window::mWindow, WindowIconifyCallback);
+    glfwSetWindowSizeCallback(Events::window->window, WindowResizeCallback);
+    glfwSetKeyCallback(Events::window->window, KeyCallback);
+    glfwSetMouseButtonCallback(Events::window->window, MouseCallback);
+    glfwSetCursorPosCallback(Events::window->window, CursorPosCallback);
+    glfwSetWindowIconifyCallback(Events::window->window, WindowIconifyCallback);
 }
 
 void Events::PollEvents() {
@@ -32,7 +35,7 @@ void Events::PollEvents() {
 }
 
 bool Events::KeyIsClicked(int key) {
-    if (0 <= key && key < MOUSE_BUTTONS) {
+    if (0 <= key && key < MOUSE_BUTTONS_OFFSET) {
         return keys[key] && (frames[key] == current_frame);
     }
 
@@ -40,7 +43,7 @@ bool Events::KeyIsClicked(int key) {
 }
 
 bool Events::KeyIsPressed(int key) {
-    if (0 <= key && key < MOUSE_BUTTONS) {
+    if (0 <= key && key < MOUSE_BUTTONS_OFFSET) {
         return keys[key];
     }
 
@@ -48,16 +51,16 @@ bool Events::KeyIsPressed(int key) {
 }
 
 bool Events::MouseIsClicked(int button) {
-    return keys[MOUSE_BUTTONS + button] && (frames[MOUSE_BUTTONS + button] == current_frame);
+    return keys[MOUSE_BUTTONS_OFFSET + button] && (frames[MOUSE_BUTTONS_OFFSET + button] == current_frame);
 }
 
 bool Events::MouseIsPressed(int button) {
-    return keys[MOUSE_BUTTONS + button];
+    return keys[MOUSE_BUTTONS_OFFSET + button];
 }
 
 void Events::SwitchCursor() {
     cursor_is_locked = !cursor_is_locked;
-    glfwSetInputMode(Window::mWindow, GLFW_CURSOR, cursor_is_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(Events::window->window, GLFW_CURSOR, cursor_is_locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
 }
 
 void Events::WindowResizeCallback(GLFWwindow* window, int width, int height) {
@@ -68,10 +71,10 @@ void Events::WindowResizeCallback(GLFWwindow* window, int width, int height) {
 
     glViewport(0, 0, width, height);
 
-    Window::mWidth = width;
-    Window::mHeight = height;
+    Events::window->width = width;
+    Events::window->height = height;
 
-    Window::isResized = true;
+    Events::window->is_resized = true;
 }
 
 void Events::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -86,11 +89,11 @@ void Events::KeyCallback(GLFWwindow* window, int key, int scancode, int action, 
 
 void Events::MouseCallback(GLFWwindow* window, int button, int action, int mods) {
     if (action == GLFW_PRESS) {
-        keys[MOUSE_BUTTONS + button] = true;
-        frames[MOUSE_BUTTONS + button] = current_frame;
+        keys[MOUSE_BUTTONS_OFFSET + button] = true;
+        frames[MOUSE_BUTTONS_OFFSET + button] = current_frame;
     } else if (action == GLFW_RELEASE) {
-        keys[MOUSE_BUTTONS + button] = false;
-        frames[MOUSE_BUTTONS + button] = current_frame;
+        keys[MOUSE_BUTTONS_OFFSET + button] = false;
+        frames[MOUSE_BUTTONS_OFFSET + button] = current_frame;
     }
 }
 
@@ -110,5 +113,5 @@ void Events::CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void Events::WindowIconifyCallback(GLFWwindow* window, int iconified) {
-    Window::isIconfied = iconified;
+    Events::window->is_iconfied = iconified;
 }

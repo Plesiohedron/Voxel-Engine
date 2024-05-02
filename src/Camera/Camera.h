@@ -1,37 +1,35 @@
 #pragma once
 
-#include "../Window/Window.h"
+#include "../Events/Events.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
 class Camera {
-private:
-    static float mFOV;
+    friend class Engine;
 
-
-    static void updateVectors();
 public:
-    static glm::vec3 position;
-    static glm::mat4 rotation;
+    void UpdateVectors();
+    void Rotate(const float x, const float y, const float z);
 
-    static glm::vec3 vectorUp;
-    static glm::vec3 vectorFront;
-    static glm::vec3 vectorRight;
+    glm::mat4 GetProjection() const;
+    glm::mat4 GetView() const;
 
-    static float cameraRotationX;
-    static float cameraRotationY;
+public:
+    float FOV;
 
+    glm::vec3 position;
+    glm::mat4 rotation;
 
-    static void initialize(glm::vec3 pos, float fov);
-    static void rotate(float x, float y, float z);
+    glm::vec3 vector_up;
+    glm::vec3 vector_front;
+    glm::vec3 vector_right;
 
-    static glm::mat4 getProjection() {
-        return glm::perspective(mFOV, Window::GetAspect(), 0.01f, 150.0f);
-    }
+    float camera_rotation_X = 0.0f;
+    float camera_rotation_Y = 0.0f;
 
-    static glm::mat4 getView() {
-        return glm::lookAt(position, position + vectorFront, vectorUp);
-    }
+private:
+    Camera(const glm::vec3 pos, const float FOV);
+    ~Camera() = default;
 };

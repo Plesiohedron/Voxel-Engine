@@ -1,67 +1,60 @@
 #include "Program.h"
 
-#include <fstream>
-#include <iostream>
-#include <glm/gtc/type_ptr.hpp>
-
-const int INFO_LOG_LENGTH = 512;
-
-
 GL::Program::Program(const std::string& name) {
-    mProgram = glCreateProgram();
+    program_ = glCreateProgram();
 
-    mVertexShader = LoadShader(("res/glsl/" + name + ".vert").c_str(), GL_VERTEX_SHADER);
-    mFragmentShader = LoadShader(("res/glsl/" + name + ".frag").c_str(), GL_FRAGMENT_SHADER);
+    vertex_shader_ = LoadShader(("res/glsl/" + name + ".vert").c_str(), GL_VERTEX_SHADER);
+    fragment_shader_ = LoadShader(("res/glsl/" + name + ".frag").c_str(), GL_FRAGMENT_SHADER);
 }
 
 GL::Program::~Program() {
-    glDetachShader(mProgram, mVertexShader);
-    glDetachShader(mProgram, mFragmentShader);
+    glDetachShader(program_, vertex_shader_);
+    glDetachShader(program_, fragment_shader_);
 
-    glDeleteShader(mVertexShader);
-    glDeleteShader(mFragmentShader);
+    glDeleteShader(vertex_shader_);
+    glDeleteShader(fragment_shader_);
 
-    glDeleteProgram(mProgram);
+    glDeleteProgram(program_);
 }
 
-void GL::Program::link() {
-    glAttachShader(mProgram, mVertexShader);
-    glAttachShader(mProgram, mFragmentShader);
-    glLinkProgram(mProgram);
+void GL::Program::Link() const {
+    glAttachShader(program_, vertex_shader_);
+    glAttachShader(program_, fragment_shader_);
+    glLinkProgram(program_);
 
     GLint status;
-    glGetProgramiv(mProgram, GL_LINK_STATUS, &status);
+    glGetProgramiv(program_, GL_LINK_STATUS, &status);
     if (!status) {
-        char buf[INFO_LOG_LENGTH];
-        glGetShaderInfoLog(mProgram, INFO_LOG_LENGTH, nullptr, buf);
-        std::cout << buf << std::endl;
+        char buf[INFO_LOG_LENGTH_];
+        glGetShaderInfoLog(program_, INFO_LOG_LENGTH_, nullptr, buf);
+        std::cerr << buf << '\n';
 
-        throw std::runtime_error("Failed to link shader!");
+        throw OpenGLError("Failed to link shader.");
     }
 }
 
-void GL::Program::use() {
-    glUseProgram(mProgram);
+void GL::Program::Use() const {
+    glUseProgram(program_);
 }
 
-void GL::Program::bindAttribute(GLuint index, const char* name) {
-    glBindAttribLocation(mProgram, index, name);
+void GL::Program::BindAttribute(GLuint index, const char* name) const {
+    glBindAttribLocation(program_, index, name);
 }
 
-GLint GL::Program::getUniformLocation(const char* name) {
-    return glGetUniformLocation(mProgram, name);
+GLint GL::Program::GetUniformLocation(const char* name) const {
+    return glGetUniformLocation(program_, name);
 }
 
-void GL::Program::uniformMatrix(GLint location, glm::mat4 matrix) {
+void GL::Program::UniformMatrix(const GLint location, const glm::mat4 matrix) const {
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-void GL::Program::uniformTexture(GLint location, GLint number) {
+void GL::Program::UniformTexture(const GLint location, const GLint number) const {
     glUniform1i(location, number);
 }
 
-GLuint GL::Program::LoadShader(const char* path, GLenum shaderType) {
-    GLuint shader = glCreateShader(shaderType);
+GLuint GL::Program::LoadShader(const char* path, const GLenum shader_type) const {
+    GLuint shader = glCreateShader(shader_type);
 
     std::ifstream fin(path);
     std::string shaderCode = {std::istreambuf_iterator<char>(fin), std::istreambuf_iterator<char>()};
@@ -73,11 +66,11 @@ GLuint GL::Program::LoadShader(const char* path, GLenum shaderType) {
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (!status) {
-        char buf[INFO_LOG_LENGTH];
-        glGetShaderInfoLog(shader, INFO_LOG_LENGTH, nullptr, buf);
-        std::cout << path << ":" << std::endl << buf << std::endl;
+        char buf[INFO_LOG_LENGTH_];
+        glGetShaderInfoLog(shader, INFO_LOG_LENGTH_, nullptr, buf);
+        std::cerr << path << ": " << buf << '\n';
 
-        throw std::runtime_error("Failed to compile shader!");
+        throw OpenGLError("Failed to compile shader.");
     }
 
     return shader;

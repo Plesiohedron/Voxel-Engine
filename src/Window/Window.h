@@ -3,27 +3,27 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <stdexcept>
+#include "../Exceptions/Exceptions.h"
 
 class Window {
-friend class Events;
-friend class Engine;
+    friend class Engine;
+
+public:
+    bool IsShouldClose() const;
+    void SetShouldClose(const bool flag) const;
+    void SwapBuffers() const;
+    float GetAspect() const;
+
+public:
+    int width;
+    int height;
+
+    bool is_iconfied{false};
+    bool is_resized{false};
+
+    GLFWwindow* window;
 
 private:
-    static GLFWwindow* mWindow;
-
-    static int mWidth;
-    static int mHeight;
-public:
-    static bool isIconfied;
-    static bool isResized;
-
-    static void Initialize(int windowWidth, int windowHeight, const char* windowTitle);
-    static void Deinitialize();
-
-    static bool IsShouldClose();
-    static void SetShouldClose(bool flag);
-    static void SwapBuffers();
-
-    static float GetAspect();
+    Window(const int window_width, const int window_height, const char* window_title);
+    ~Window();
 };

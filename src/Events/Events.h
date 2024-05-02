@@ -2,35 +2,35 @@
 
 #include "../Window/Window.h"
 
-class Events {
-public:
-    static const short int MOUSE_BUTTONS = 1024;
+namespace Events {
+    extern const int MOUSE_BUTTONS_OFFSET;
+    extern bool keys[1032];
 
-    static bool keys[1032];
+    extern unsigned long long int current_frame;
+    extern unsigned long long int frames[1032];
 
-    static float cursor_x;
-    static float cursor_y;
-    static float cursor_delta_x;
-    static float cursor_delta_y;
-    static bool cursor_is_moving;
-    static bool cursor_is_locked;
+    extern float cursor_x;
+    extern float cursor_y;
+    extern float cursor_delta_x;
+    extern float cursor_delta_y;
+    extern bool cursor_is_moving;
+    extern bool cursor_is_locked;
 
-    static unsigned long long int current_frame;
-    static unsigned long long int frames[1032];
+    extern Window* window;
 
 
-    static void Initialize();
-    static void PollEvents();
+    void Initialize(Window* window);
+    void PollEvents();
 
-    static bool KeyIsClicked(int key);
-    static bool KeyIsPressed(int key);
-    static bool MouseIsClicked(int button);
-    static bool MouseIsPressed(int button);
-    static void SwitchCursor();
-private:
-    static void WindowResizeCallback(GLFWwindow* window, int width, int height);
-    static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void MouseCallback(GLFWwindow* window, int button, int action, int mods);
-    static void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
-    static void WindowIconifyCallback(GLFWwindow* window, int iconified);
-};
+    bool KeyIsClicked(int key);
+    bool KeyIsPressed(int key);
+    bool MouseIsClicked(int button);
+    bool MouseIsPressed(int button);
+    void SwitchCursor();
+
+    void WindowResizeCallback(GLFWwindow* window, int width, int height);
+    void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    void MouseCallback(GLFWwindow* window, int button, int action, int mods);
+    void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
+    void WindowIconifyCallback(GLFWwindow* window, int iconified);
+};  // namespace Events

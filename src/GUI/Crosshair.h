@@ -3,38 +3,48 @@
 #include "../GL/VAO.h"
 #include "../GL/Program.h"
 #include "../GL/Texture2D.h"
+#include "../Events/Events.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
 class Crosshair {
-private:
-    static const GLsizei crosshairWidth;
-    static const GLsizei crosshairHeight;
-
-    static unsigned windowWidth;
-    static unsigned windowHeight;
-
-    static std::unique_ptr<GL::Program> crosshairShader;
-    static std::unique_ptr<GL::VAO> crosshairVAO;
-    static glm::mat4 model;
-
-    static std::unique_ptr<GL::Texture2D> crosshairTexture;
-    static std::unique_ptr<GL::Texture2D> crosshairRegionTexture;
-    static GLubyte crosshairRegionColors[3 * 32 * 32];
-
-    static GLuint uniformCrosshairTextureLoc;
-    static GLuint uniformCrosshairRegionTextureLoc;
-    static GLint uniformModelLoc;
-
-    static std::vector<GLushort> vertices;
-    static std::vector<GLushort> indexes;
-
-    static void MakeCrosshairRegionTexture();
+    friend class GUI;
 
 public:
-    static void Initialize(int width, int height);
-    static void UpdateModel(int width, int height);
-    static void Draw(bool cursorIsMoving, bool cursorIsLocked);
+    void UpdateModel();
+    void Draw();
+
+private:
+    const float WIDTH_ = 32;
+    const float HEIGHT_ = 32;
+
+    std::unique_ptr<GL::Program> shader_;
+    std::unique_ptr<GL::VAO> VAO_;
+    glm::mat4 model_;
+
+    std::unique_ptr<GL::Texture2D> texture_;
+    std::unique_ptr<GL::Texture2D> region_texture_;
+    GLubyte region_colors_[3 * 32 * 32]{0};
+
+    GLuint uniform_texture_loc_;
+    GLuint uniform_region_texture_loc_;
+    GLint uniform_model_loc_;
+
+    const std::vector<glm::vec3> position_ = {
+        {0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}
+    };
+    const std::vector<glm::vec2> UV_ = {
+        {0.0f, 1.0f / 16}, {1.0f / 16, 1.0f / 16},
+        {0.0f, 0.0f}, {1.0f / 16, 0.0f}
+    };
+    const std::vector<GLushort> indexes_ = {0, 1, 2, 2, 1, 3};
+
+private:
+    Crosshair();
+    ~Crosshair() = default;
+
+    void MakeCrosshairRegionTexture();
 };

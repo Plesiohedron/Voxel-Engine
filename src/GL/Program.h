@@ -1,33 +1,37 @@
 #pragma once
 
+#include <iostream>
+#include <fstream>
+
 #include <GL/glew.h>
 #include <GL/GL.h>
-
 #include <glm/glm.hpp>
-#include <string>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "../Exceptions/Exceptions.h"
 
 namespace GL {
     class Program {
-    private:
-        GLuint mProgram;
-        GLuint mVertexShader;
-        GLuint mFragmentShader;
-
-        GLuint LoadShader(const char* path, GLenum shaderType);
-
     public:
         Program(const std::string& name);
         ~Program();
 
-        void link();
-        void use();
+        void Link() const;
+        void Use() const;
 
-        void bindAttribute(GLuint index, const char* name);
-        GLint bindUniform(const char* name);
+        void BindAttribute(const GLuint index, const char* name) const;
+        GLint GetUniformLocation(const char* name) const;
+        void UniformMatrix(const GLint uniform, const glm::mat4 matrix) const;
+        void UniformTexture(const GLint location, const GLint number) const;
 
-        GLint getUniformLocation(const char* name);
+    private:
+        GLuint LoadShader(const char* path, const GLenum shader_type) const;
 
-        void uniformMatrix(GLint uniform, glm::mat4 matrix);
-        void uniformTexture(GLint location, GLint number);
+    private:
+        GLuint program_;
+        GLuint vertex_shader_;
+        GLuint fragment_shader_;
+
+        static const int INFO_LOG_LENGTH_ = 512;
     };
-}
+}  // namespace GL

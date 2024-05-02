@@ -1,40 +1,36 @@
 #include "Texture2D.h"
-#include <iostream>
 
 GL::Texture2D::Texture2D() {
-    glGenTextures(1, &mHandle);
+    glGenTextures(1, &handle_);
 }
 
 GL::Texture2D::~Texture2D() {
-    glDeleteTextures(1, &mHandle);
+    glDeleteTextures(1, &handle_);
 }
 
-void GL::Texture2D::bind() {
-    glBindTexture(GL_TEXTURE_2D, mHandle);
+void GL::Texture2D::Bind() const {
+    glBindTexture(GL_TEXTURE_2D, handle_);
 }
 
-void GL::Texture2D::setImage(const Image& image) {
-    switch (image.getFormat()) {
+void GL::Texture2D::SetImage(const Image& image) {
+    switch (image.format) {
         case Image::RGB:
-            glFormat = GL_RGB;
+            GL_format = GL_RGB;
             break;
 
         case Image::RGBA:
-            glFormat = GL_RGBA;
+            GL_format = GL_RGBA;
             break;
-
-        default:
-            assert(0);
     }
 
-    width = image.getWidth();
-    height = image.getHeight();
+    width = image.width;
+    height = image.height;
 
 
-    glBindTexture(GL_TEXTURE_2D, mHandle);
+    glBindTexture(GL_TEXTURE_2D, handle_);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, glFormat, width, height, 0, glFormat, GL_UNSIGNED_BYTE, image.getData().data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_format, width, height, 0, GL_format, GL_UNSIGNED_BYTE, image.data.data());
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -43,17 +39,12 @@ void GL::Texture2D::setImage(const Image& image) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glBindTexture(GL_TEXTURE_2D, 0);
-
-    GLenum error = glGetError();
-    if (error != GL_NO_ERROR) {
-        std::cerr << "OpenGL error after glBindTexture: " << error << std::endl;
-    }
 }
 
-void GL::Texture2D::set() {
-    glBindTexture(GL_TEXTURE_2D, mHandle);
+void GL::Texture2D::SetEmpty(const unsigned int texture_width, const unsigned int texture_height) {
+    glBindTexture(GL_TEXTURE_2D, handle_);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 32, 32, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture_width, texture_height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

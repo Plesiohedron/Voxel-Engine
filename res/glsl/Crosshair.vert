@@ -2,21 +2,14 @@
 
 #extension GL_NV_gpu_shader5 : enable
 
-layout (location = 0) in uint16_t position;
-layout (location = 1) in uint16_t UV;
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec2 UV;
 
-out vec2 fragUV;
+out vec2 frag_UV;
 
 uniform mat4 model;
 
 void main() {
-
-	float UVx = ((UV >> 5u) & 0x1Fu) / 16.0f;
-	float UVy = (UV & 0x1Fu) / 16.0f;
-
-	float x = ((position >> 10u) & 0x1Fu);
-	float y = ((position >> 5u) & 0x1Fu);
-
-	fragUV = vec2(UVx, UVy);
-	gl_Position = model * vec4(x, y, 0.0f, 1.0f);
+	frag_UV = UV;
+	gl_Position = model * vec4(position, 1.0f);
 }
