@@ -5,7 +5,6 @@
 #include "../GL/Texture2D.h"
 #include "../Events/Events.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
@@ -13,17 +12,14 @@ class Crosshair {
     friend class GUI;
 
 public:
-    void UpdateModel();
-    void Draw();
+    const float WIDTH = 32.0f;
+    const float HEIGHT = 32.0f;
 
 private:
-    const float WIDTH_ = 32;
-    const float HEIGHT_ = 32;
+    glm::mat4 model_;
 
     std::unique_ptr<GL::Program> shader_;
     std::unique_ptr<GL::VAO> VAO_;
-    glm::mat4 model_;
-
     std::unique_ptr<GL::Texture2D> texture_;
     std::unique_ptr<GL::Texture2D> region_texture_;
     GLubyte region_colors_[3 * 32 * 32]{0};
@@ -41,6 +37,10 @@ private:
         {0.0f, 0.0f}, {1.0f / 16, 0.0f}
     };
     const std::vector<GLushort> indexes_ = {0, 1, 2, 2, 1, 3};
+
+public:
+    void UpdateModel();
+    void Draw();
 
 private:
     Crosshair();

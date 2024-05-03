@@ -6,21 +6,13 @@ Engine::Engine(const int window_width, const int window_height, const char* wind
     camera_.Rotate(0.0f, glm::radians(180.0f), 0.0f);
     camera_.camera_rotation_X = glm::radians(180.0f);
 
-    shader_program_ = std::make_unique<GL::Program>("Chunks");
-    shader_program_->BindAttribute(0, "color");
-    shader_program_->BindAttribute(1, "UV");
-    shader_program_->BindAttribute(2, "position");
-    shader_program_->Link();
+    chunk_storage_ = new ChunkStorage(3, {0, 0, 0});
 
-    uniform_texture_loc_ = shader_program_->GetUniformLocation("texture0");
-    uniform_projection_loc_ = shader_program_->GetUniformLocation("projection");
-    uniform_view_loc_ = shader_program_->GetUniformLocation("view");
-    uniform_model_loc_ = shader_program_->GetUniformLocation("model");
-
-    texture_atlas_ = std::make_unique<GL::Texture3D>();
-    texture_atlas_->SetAtlas(Image::LoadImage("Atlas.png"));
-
-    chunk_storage_ = new ChunkStorage(2, {0, 0, 0});
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
 }
 
 void Engine::MainLoop() {
@@ -43,16 +35,26 @@ void Engine::MainLoop() {
     test.InitializeEBO(indexes);
     test.PostInitialization();*/
 
-    for (const auto chunk : chunk_storage_->chunks) {
-        chunk->Render();
-    }
-    
+    for (int y = 0; y < ChunkStorage::storage_sizes.y; ++y) {
+        for (int z = 0; z < ChunkStorage::storage_sizes.z; ++z) {
+            for (int x = 0; x < ChunkStorage::storage_sizes.z; ++x) {
+                Chunk* chunk = chunk_storage_->chunks_[(y * ChunkStorage::storage_sizes.z + z) * ChunkStorage::storage_sizes.x + x];
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
+                chunk->Render();
+
+                chunk_storage_->X_planes_.clear();
+                chunk_storage_->Y_planes_.clear();
+                chunk_storage_->Z_planes_.clear();
+
+                GL::VAO* chunk_VAO = chunk_storage_->chunks_VAOs_[(y * ChunkStorage::storage_sizes.z + z) * ChunkStorage::storage_sizes.x + x];
+
+                chunk_VAO->Bind();
+                chunk_VAO->InitializeChunkVBO(chunk->vertices, chunk->vertices_array_size);
+                chunk_VAO->InitializeEBO(chunk->indexes, chunk->indexes_array_size);
+                chunk_VAO->PostInitialization();
+            }
+        }
+    }
 
 
     float last_time = static_cast<float>(glfwGetTime());
@@ -113,31 +115,14 @@ void Engine::MainLoop() {
             }
 
             if (Events::KeyIsPressed(GLFW_KEY_F)) {
-                debug_mode_ = GL_LINES;
+                chunk_storage_->rendering_mode_ = GL_LINES;
             } else {
-                debug_mode_ = GL_TRIANGLES;
+                chunk_storage_->rendering_mode_ = GL_TRIANGLES;
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            shader_program_->Use();
-            shader_program_->UniformMatrix(uniform_projection_loc_, camera_.GetProjection());
-            shader_program_->UniformMatrix(uniform_view_loc_, camera_.GetView());
-
-            glActiveTexture(GL_TEXTURE0);
-            texture_atlas_->Bind();
-            shader_program_->UniformTexture(uniform_texture_loc_, 0);
-
-            for (const Chunk* chunk : chunk_storage_->chunks) {
-                chunk_storage_->model = glm::translate(glm::mat4(1.0f), glm::vec3(chunk->global_coordinate_X * Chunk::WIDTH,
-                                                                         chunk->global_coordinate_Y * Chunk::HEIGHT,
-                                                                         chunk->global_coordinate_Z * Chunk::DEPTH));
-
-                shader_program_->UniformMatrix(uniform_model_loc_, chunk_storage_->model);
-                
-                chunk->Draw(debug_mode_);
-            }
-
+            chunk_storage_->Draw(camera_);
             GUI_.crosshair.Draw();
         }
 

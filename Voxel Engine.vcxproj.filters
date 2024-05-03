@@ -33,6 +33,7 @@
     <ClInclude Include="src\GUI\Crosshair.h" />
     <ClInclude Include="src\GUI\GUI.h" />
     <ClInclude Include="src\Chunks\ChunkStorage.h" />
+    <ClInclude Include="src\Chunks\Multi-D Dynamic Array\MultiArray.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

@@ -17,7 +17,7 @@ Crosshair::Crosshair() : model_(1.0f) {
     uniform_model_loc_ = shader_->GetUniformLocation("model");
 
     texture_->SetImage(Image::LoadImage("icons.png"));
-    region_texture_->SetEmpty(WIDTH_, HEIGHT_);
+    region_texture_->SetEmpty(WIDTH, HEIGHT);
 
     VAO_->Bind();
     VAO_->InitializeBasicVBO(position_);
@@ -29,15 +29,15 @@ Crosshair::Crosshair() : model_(1.0f) {
 }
 
 void Crosshair::MakeCrosshairRegionTexture() {
-    glReadPixels(Events::window->width / 2 - WIDTH_ / 2, Events::window->height / 2 - HEIGHT_ / 2, WIDTH_, HEIGHT_, GL_RGB, GL_UNSIGNED_BYTE, region_colors_);
+    glReadPixels(Events::window->width / 2 - WIDTH / 2, Events::window->height / 2 - HEIGHT / 2, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, region_colors_);
     region_texture_->Bind();
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH_, HEIGHT_, GL_RGB, GL_UNSIGNED_BYTE, region_colors_);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, region_colors_);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Crosshair::UpdateModel() {
-    model_ = glm::translate(glm::mat4(1.0f), glm::vec3(-WIDTH_ / Events::window->width, -HEIGHT_ / Events::window->height, 0.0f));
-    model_ = glm::scale(model_, glm::vec3(WIDTH_ / (Events::window->width / 2), HEIGHT_ / (Events::window->height / 2), 1.0f));
+    model_ = glm::translate(glm::mat4(1.0f), glm::vec3(-WIDTH / Events::window->width, -HEIGHT / Events::window->height, 0.0f));
+    model_ = glm::scale(model_, glm::vec3(WIDTH / (Events::window->width / 2), HEIGHT / (Events::window->height / 2), 1.0f));
 }
 
 void Crosshair::Draw() {
