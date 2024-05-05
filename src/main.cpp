@@ -14,5 +14,4 @@ int main() {
     } catch (const STBImageError& e) {
         std::cerr << e.what() << std::endl;
     }
-
 }

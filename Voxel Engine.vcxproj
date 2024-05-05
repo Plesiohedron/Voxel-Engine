@@ -131,7 +131,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Chunks\ChunkStorage.cpp" />
+    <ClCompile Include="src\Chunks\Chunks.cpp" />
+    <ClCompile Include="src\GL\SpecialVAO.cpp" />
     <ClCompile Include="src\GUI\GUI.cpp" />
     <ClCompile Include="src\Exceptions\Exceptions.cpp" />
     <ClCompile Include="src\Chunks\Chunk.cpp" />
@@ -141,15 +142,16 @@
     <ClCompile Include="src\GL\Program.cpp" />
     <ClCompile Include="src\Events\Events.cpp" />
     <ClCompile Include="src\Engine\Engine.cpp" />
-    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Window\Window.cpp" />
     <ClCompile Include="src\GL\VAO.cpp" />
     <ClCompile Include="src\GL\Texture2D.cpp" />
     <ClCompile Include="src\GL\Texture3D.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Chunks\ChunkStorage.h" />
+    <ClInclude Include="src\Chunks\Chunks.h" />
     <ClInclude Include="src\Chunks\Multi-D Dynamic Array\MultiArray.h" />
+    <ClInclude Include="src\GL\SpecialVAO.h" />
     <ClInclude Include="src\GUI\GUI.h" />
     <ClInclude Include="src\Exceptions\Exceptions.h" />
     <ClInclude Include="src\Chunks\Chunk.h" />

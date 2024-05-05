@@ -6,13 +6,14 @@ Engine::Engine(const int window_width, const int window_height, const char* wind
     camera_.Rotate(0.0f, glm::radians(180.0f), 0.0f);
     camera_.camera_rotation_X = glm::radians(180.0f);
 
-    chunk_storage_ = new ChunkStorage(3, {0, 0, 0});
+    chunks_ = new Chunks(5, {0, 0, 0});
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
+    glfwSwapInterval(1);
 }
 
 void Engine::MainLoop() {
@@ -35,31 +36,33 @@ void Engine::MainLoop() {
     test.InitializeEBO(indexes);
     test.PostInitialization();*/
 
-    for (int y = 0; y < ChunkStorage::storage_sizes.y; ++y) {
-        for (int z = 0; z < ChunkStorage::storage_sizes.z; ++z) {
-            for (int x = 0; x < ChunkStorage::storage_sizes.z; ++x) {
-                Chunk* chunk = chunk_storage_->chunks_[(y * ChunkStorage::storage_sizes.z + z) * ChunkStorage::storage_sizes.x + x];
+    for (size_t vertex_offset = 0, index_offset = 0, i = 0; i < chunks_->chunk_count; ++i) {
+        chunks_->unified_voxel_indirect_command_data_[i] = {0, 1, static_cast<GLuint>(index_offset),
+                                                            static_cast<GLuint>(vertex_offset) / Chunk::VERTEX_ATTRIBUTES_COUNT, 0};
 
-                chunk->Render();
+        chunks_->chunks_[i]->Render(chunks_->unified_voxel_vertex_data_ + vertex_offset, chunks_->unified_voxel_index_data_ + index_offset,
+                                    chunks_->unified_voxel_indirect_command_data_ + i);
 
-                chunk_storage_->X_planes_.clear();
-                chunk_storage_->Y_planes_.clear();
-                chunk_storage_->Z_planes_.clear();
+        chunks_->X_planes_.clear();
+        chunks_->Y_planes_.clear();
+        chunks_->Z_planes_.clear();
 
-                GL::VAO* chunk_VAO = chunk_storage_->chunks_VAOs_[(y * ChunkStorage::storage_sizes.z + z) * ChunkStorage::storage_sizes.x + x];
-
-                chunk_VAO->Bind();
-                chunk_VAO->InitializeChunkVBO(chunk->vertices, chunk->vertices_array_size);
-                chunk_VAO->InitializeEBO(chunk->indexes, chunk->indexes_array_size);
-                chunk_VAO->PostInitialization();
-            }
-        }
+        vertex_offset += Chunk::MAXIMUM_VOXEL_FACES_COUNT * Chunk::VERTEX_ATTRIBUTES_COUNT * Chunk::VERTICES_COUNT_PER_SQUARE;
+        index_offset += Chunk::MAXIMUM_VOXEL_FACES_COUNT * Chunk::INDEXES_COUNT_PER_SQUARE;
     }
+
+    chunks_->unified_VAO_->Bind();
+    chunks_->unified_VAO_->InitializeVBO(chunks_->unified_voxel_vertex_data_, chunks_->vertex_data_capacity_);
+    chunks_->unified_VAO_->InitializeEBO(chunks_->unified_voxel_index_data_, chunks_->index_data_capacity_);
+    chunks_->unified_VAO_->InitializeIB(chunks_->unified_voxel_indirect_command_data_, chunks_->indirect_command_data_capacity_);
+    chunks_->unified_VAO_->PostInitialization();
 
 
     float last_time = static_cast<float>(glfwGetTime());
     float delta_time = 0.0f;
     float current_time = 0.0f;
+    float total_time = 0.0;
+    int frame_count = 0;
 
     float speed = 5.0f;
 
@@ -67,6 +70,8 @@ void Engine::MainLoop() {
         current_time = static_cast<float>(glfwGetTime());
         delta_time = current_time - last_time;
         last_time = current_time;
+
+        // std::cout << 1 / delta_time << '\n';
 
         if (!window_.is_iconfied) {
             if (Events::KeyIsClicked(GLFW_KEY_ESCAPE)) {
@@ -115,22 +120,32 @@ void Engine::MainLoop() {
             }
 
             if (Events::KeyIsPressed(GLFW_KEY_F)) {
-                chunk_storage_->rendering_mode_ = GL_LINES;
+                chunks_->rendering_mode_ = GL_LINES;
             } else {
-                chunk_storage_->rendering_mode_ = GL_TRIANGLES;
+                chunks_->rendering_mode_ = GL_TRIANGLES;
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            chunk_storage_->Draw(camera_);
+            chunks_->Draw(camera_);
+
+            // test.Draw(GL_TRIANGLES);
             GUI_.crosshair.Draw();
         }
 
         window_.SwapBuffers();
         Events::PollEvents();
+
+        total_time += delta_time;
+        ++frame_count;
+        if (total_time > 1.0f) {
+            std::cout << frame_count / total_time << '\n';
+            frame_count = 0;
+            total_time = 0;
+        }
     }
 }
 
 Engine::~Engine() {
-    delete chunk_storage_;
+    delete chunks_;
 }

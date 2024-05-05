@@ -3,7 +3,7 @@
 #include "../Window/Window.h"
 #include "../Camera/Camera.h"
 #include "../GUI/GUI.h"
-#include "../Chunks/ChunkStorage.h"
+#include "../Chunks/Chunks.h"
 
 class Engine {
 public:
@@ -18,7 +18,7 @@ private:
     Window window_;
     Camera camera_;
     GUI GUI_;
-    ChunkStorage* chunk_storage_;
+    Chunks* chunks_;
 
 private:
     Engine(const int window_width, const int window_height, const char* window_title);
