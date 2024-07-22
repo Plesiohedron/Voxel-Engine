@@ -1,34 +1,42 @@
 #pragma once
 
 #include "Voxel.h"
-#include "../GL/SpecialVAO.h"
-#include "Multi-D Dynamic Array/MultiArray.h"
 
+#include <vector>
 #include <glm/glm.hpp>
 
 class Chunk {
     friend class Chunks;
 
-private:
-    MultiArray<uint32_t> mesh_data_;
-    Voxel* voxels_;
-
 public:
-    int global_coordinate_X;
-    int global_coordinate_Y;
-    int global_coordinate_Z;
+    glm::ivec3 global_coordinates;
+    glm::ivec3 local_coordinates;
 
     static const int WIDTH = 16;
     static const int HEIGHT = 16;
     static const int DEPTH = 16;
     static const int VOLUME = WIDTH * HEIGHT * DEPTH;
 
-    static const int VERTEX_ATTRIBUTES_COUNT = 3;
     static const int VERTICES_COUNT_PER_SQUARE = 4;
     static const int INDEXES_COUNT_PER_SQUARE = 6;
+    static const int FACES_COUNT_PER_CUBE = 6;
 
-    // Change in the future
-    static const int MAXIMUM_VOXEL_FACES_COUNT = 500;
+    int VOXEL_FACES_CAPACITY = 512;
+    std::vector<uint64_t> vertex_data;
+    std::vector<uint32_t> index_data;
+
+private:
+    static Chunk** chunk_storage_;
+    uint16_t* face_planes_[Chunk::FACES_COUNT_PER_CUBE];
+    Voxel* voxels_;
+
+private:
+    void Culling(uint16_t (&X_rows)[Chunk::HEIGHT][Chunk::DEPTH], uint16_t (&Y_rows)[Chunk::DEPTH][Chunk::WIDTH],
+                 uint16_t (&Z_rows)[Chunk::WIDTH][Chunk::HEIGHT]);
+    void CullingChunksJoints();
+
+    bool IsBlocked(int x, int y, int z);
+    uint64_t AmbientOcclusion(int x, int y, int z, int direction);
 
 private:
     Chunk(const glm::ivec3& coordinates);
@@ -36,7 +44,5 @@ private:
     ~Chunk();
 
 public:
-    void Render(GLushort* vertex_data_section, GLushort* index_data_section, GL::IndirectCommand* indirect_command_data_section);
-    void Culling();
-    unsigned int GreedyMeshing(GLushort* vertex_data_section, GLushort* index_data_section);
+    void GreedyMesh();
 };

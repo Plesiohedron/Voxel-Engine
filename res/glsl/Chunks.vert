@@ -1,10 +1,6 @@
 #version 460 core
 
-#extension GL_NV_gpu_shader5 : enable
-
-layout (location = 0) in uint16_t position;
-layout (location = 1) in uint16_t UV;
-layout (location = 2) in uint16_t color;
+layout (location = 0) in uvec2 data;
 
 out vec3 frag_UV;
 out vec4 frag_color;
@@ -13,21 +9,32 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
+const vec2 texture_coordinates[4] = vec2[4](
+	vec2(0.0f, 0.0f),
+	vec2(1.0f, 0.0f),
+	vec2(0.0f, 1.0f),
+	vec2(1.0f, 1.0f)
+);
+
 void main() {
-	float r = ((color >> 12u) & 0xFu) / 15.0f;
-	float g = ((color >> 8u) & 0xFu) / 15.0f;
-	float b = ((color >> 4u) & 0xFu) / 15.0f;
-	float a = (color & 0xFu) / 15.0f;
+	float AO = float((data.x >> 24u) & 3u);
 
-	uint UV_layer = ((UV >> 10u) & 0x2Fu);
-	float UVx = ((UV >> 5u) & 0x1Fu);
-	float UVy = (UV & 0x1Fu);
+	uint UV_layer = uint(data.x & 0xFFu);
+	uint tex_coords = uint((data.y >> 4u) & 3u);
+	int w = int(data.y & 0xFu) + 1;
+	int h = int((data.x >> 26u) & 0xFu) + 1;
+	vec2 UV = texture_coordinates[tex_coords] * vec2(w, h);
 
-	float x = ((position >> 10u) & 0x1Fu);
-	float y = ((position >> 5u) & 0x1Fu);
-	float z = (position & 0x1Fu);
+	float r = (float((data.x >> 20u) & 0xFu) / 15.0f) * (1.0f - 0.2f * AO);
+	float g = (float((data.x >> 16u) & 0xFu) / 15.0f) * (1.0f - 0.2f * AO);
+	float b = (float((data.x >> 12u) & 0xFu) / 15.0f) * (1.0f - 0.2f * AO);
+	float s = (float((data.x >> 8u) & 0xFu) / 15.0f);
 
-	frag_color = vec4(r, g, b, a);
-	frag_UV = vec3(UVx, UVy, UV_layer);
+	float x = float((data.y >> 16u) & 0x1Fu);
+	float y = float((data.y >> 11u) & 0x1Fu);
+	float z = float((data.y >> 6u) & 0x1Fu);
+
+	frag_color = vec4(r, g, b, 1.0f);
+	frag_UV = vec3(UV, UV_layer);
 	gl_Position = projection * view * model * vec4(x, y, z, 1.0f);
 }
