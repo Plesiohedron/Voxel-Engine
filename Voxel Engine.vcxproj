@@ -133,13 +133,13 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;/NODEFAULTLIB:LIBCMT;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\Voxel Engine\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Chunks\Chunks.cpp" />
-    <ClCompile Include="src\GL\ChunkVAO.cpp" />
+    <ClCompile Include="src\GL\SChunkVAO.cpp" />
     <ClCompile Include="src\GUI\GUI.cpp" />
     <ClCompile Include="src\Exceptions\Exceptions.cpp" />
     <ClCompile Include="src\Chunks\Chunk.cpp" />
@@ -154,11 +154,11 @@
     <ClCompile Include="src\GL\VAO.cpp" />
     <ClCompile Include="src\GL\Texture2D.cpp" />
     <ClCompile Include="src\GL\Texture3D.cpp" />
+    <ClCompile Include="src\GL\SSBO.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Chunks\Chunks.h" />
-    <ClInclude Include="src\Chunks\Multi-D Dynamic Array\MultiArray.h" />
-    <ClInclude Include="src\GL\ChunkVAO.h" />
+    <ClInclude Include="src\GL\SChunkVAO.h" />
     <ClInclude Include="src\GUI\GUI.h" />
     <ClInclude Include="src\Exceptions\Exceptions.h" />
     <ClInclude Include="src\Chunks\Chunk.h" />
@@ -173,6 +173,7 @@
     <ClInclude Include="src\GL\VAO.h" />
     <ClInclude Include="src\GL\Texture2D.h" />
     <ClInclude Include="src\GL\Texture3D.h" />
+    <ClInclude Include="src\GL\SSBO.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

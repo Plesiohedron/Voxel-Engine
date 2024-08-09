@@ -27,14 +27,14 @@ public:
     ~VAO();
 
     void Bind() const;
-    void Draw(const unsigned int primitive_type) const;
+    void Draw(GLenum primitive_type) const;
 
     void InitializeBasicVBO(const std::vector<float>& vertex_data);
     void InitializeBasicVBO(const std::vector<glm::vec2>& vertex_data);
     void InitializeBasicVBO(const std::vector<glm::vec3>& vertex_data);
 
     void InitializeEBO(const std::vector<GLushort>& index_data);
-    void InitializeEBO(const GLushort* index_data, const unsigned int data_size);
+    void InitializeEBO(const GLushort* index_data, unsigned int data_size);
 
     void PostInitialization() const;
 

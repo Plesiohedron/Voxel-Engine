@@ -12,7 +12,8 @@ Image Image::LoadImage(const std::string& path) {
     std::unique_ptr<stbi_uc> data = std::unique_ptr<stbi_uc>(stbi_load(("res/texture/" + path).c_str(), &x, &y, &channels, 0));
 
     if (data == nullptr) {
-        throw STBImageError(path + '\n' + "Failed to initialize image!");
+        std::cout << path + '\n' + "Failed to initialize image!" << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 
     Format format;
@@ -26,7 +27,8 @@ Image Image::LoadImage(const std::string& path) {
             break;
 
         default:
-            throw STBImageError("Incorrect number of channels (" + std::to_string(channels) + ") in file: " + path);
+            std::cout << "Incorrect number of channels (" + std::to_string(channels) + ") in file: " + path << std::endl;
+            std::exit(EXIT_FAILURE);
     }
 
     int size = x * y * channels;

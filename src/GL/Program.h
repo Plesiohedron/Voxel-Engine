@@ -21,6 +21,7 @@ namespace GL {
 
         void BindAttribute(const GLuint index, const char* name) const;
         GLint GetUniformLocation(const char* name) const;
+        void UniformInt(const GLint location, const int value) const;
         void UniformMatrix(const GLint uniform, const glm::mat4 matrix) const;
         void UniformTexture(const GLint location, const GLint number) const;
 

@@ -5,7 +5,8 @@
 Window::Window(const int window_width, const int window_height, const char* window_title) 
     : width(window_width), height(window_height) {
     if (!glfwInit()) {
-        throw GLFWError("Failed to initialize GLFW!");
+        std::cout << "Failed to initialize GLFW!" << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -16,14 +17,16 @@ Window::Window(const int window_width, const int window_height, const char* wind
 
     window = glfwCreateWindow(width, height, window_title, nullptr, nullptr);
     if (!window) {
-        throw GLFWError("Failed to create window!");
+        std::cout << "Failed to create window!" << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 
     glfwMakeContextCurrent(window);
 
     glewExperimental = true;
     if (glewInit() != GLEW_OK) {
-        throw OpenGLError("Failed to initialize GLEW!");
+        std::cout << "Failed to initialize GLEW!" << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 
     glViewport(0, 0, width, height);

@@ -7,33 +7,22 @@ Engine::Engine(const int window_width, const int window_height, const char* wind
     camera_.Rotate(0.0f, glm::radians(180.0f), 0.0f);
     camera_.camera_rotation_X = glm::radians(180.0f);
 
-    chunks_ = new Chunks(1, {0, 0, 0});
+    chunks_ = new Chunks(3, {0, 8, 0});
+
+    if (chunks_ == nullptr) {
+        std::cout << "Bad alloc: chunks_ (Engine)" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
 }
 
 void Engine::MainLoop() {
-
-    for (int i = 0; i < chunks_->chunk_count; ++i) {
-        auto start = std::chrono::high_resolution_clock::now();
-
-        chunks_->chunks_[i]->GreedyMesh();
-
-        auto stop = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-        std::cout << "Time taken by function: " << duration.count() << " microseconds\n";
-
-        chunks_->VAOs_[i]->Bind();
-        chunks_->VAOs_[i]->InitializeVBO(chunks_->chunks_[i]->vertex_data);
-        chunks_->VAOs_[i]->InitializeEBO(chunks_->chunks_[i]->index_data);
-        chunks_->VAOs_[i]->PostInitialization();
-    }
-
 
     double last_time = glfwGetTime();
     double delta_time = 0.0f;
@@ -41,8 +30,9 @@ void Engine::MainLoop() {
     double total_time = 0.0;
     int frame_count = 0;
 
-    float speed = 5.0f;
+    float speed = 15.0f;
 
+    bool switcher = false;
     while (!window_.IsShouldClose()) {
         current_time = glfwGetTime();
         delta_time = current_time - last_time;
@@ -96,17 +86,37 @@ void Engine::MainLoop() {
                 camera_.Rotate(camera_.camera_rotation_Y, camera_.camera_rotation_X, 0.0f);
             }
 
-            if (Events::KeyIsPressed(GLFW_KEY_F)) {
-                chunks_->rendering_mode_ = GL_LINES;
-            } else {
-                chunks_->rendering_mode_ = GL_TRIANGLES;
+            if (Events::KeyIsClicked(GLFW_KEY_E)) {
+                switcher = !switcher;
+                if (switcher) {
+                    chunks_->rendering_mode_ = GL_LINES;
+                } else {
+                    chunks_->rendering_mode_ = GL_TRIANGLES;
+                }
+            }
+
+            {
+                glm::vec3 end;
+                glm::vec3 norm;
+                glm::vec3 iend;
+                Voxel* voxel = chunks_->RayCast(camera_.position, camera_.vector_front, 10.0f, end, norm, iend);
+                if (voxel != nullptr) {
+                    if (Events::MouseIsClicked(GLFW_MOUSE_BUTTON_1)) {
+                        chunks_->SetVoxel(static_cast<int>(iend.x), static_cast<int>(iend.y), static_cast<int>(iend.z), 0);
+                    }
+                    if (Events::MouseIsClicked(GLFW_MOUSE_BUTTON_2)) {
+                        chunks_->SetVoxel(static_cast<int>(iend.x) + static_cast<int>(norm.x),
+                                          static_cast<int>(iend.y) + static_cast<int>(norm.y),
+                                          static_cast<int>(iend.z) + static_cast<int>(norm.z), 4);
+                    }
+                }
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            chunks_->PollUpdates();
             chunks_->Draw(camera_);
 
-            // test.Draw(GL_TRIANGLES);
             GUI_.crosshair.Draw();
         }
 

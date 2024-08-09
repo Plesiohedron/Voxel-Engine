@@ -29,7 +29,8 @@ void GL::Program::Link() const {
         glGetShaderInfoLog(program_, INFO_LOG_LENGTH_, nullptr, buf);
         std::cerr << buf << '\n';
 
-        throw OpenGLError("Failed to link shader.");
+        std::cout << "Failed to link shader." << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 }
 
@@ -43,6 +44,10 @@ void GL::Program::BindAttribute(GLuint index, const char* name) const {
 
 GLint GL::Program::GetUniformLocation(const char* name) const {
     return glGetUniformLocation(program_, name);
+}
+
+void GL::Program::UniformInt(const GLint location, const int value) const {
+    glUniform1i(location, value);
 }
 
 void GL::Program::UniformMatrix(const GLint location, const glm::mat4 matrix) const {
@@ -70,7 +75,8 @@ GLuint GL::Program::LoadShader(const char* path, const GLenum shader_type) const
         glGetShaderInfoLog(shader, INFO_LOG_LENGTH_, nullptr, buf);
         std::cerr << path << ": " << buf << '\n';
 
-        throw OpenGLError("Failed to compile shader.");
+        std::cout << "Failed to compile shader." << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 
     return shader;

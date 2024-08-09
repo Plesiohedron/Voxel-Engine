@@ -9,7 +9,7 @@ void GL::VAO::Bind() const {
     glBindVertexArray(VAO_);
 }
 
-void GL::VAO::Draw(const GLenum primitive_type) const {
+void GL::VAO::Draw(GLenum primitive_type) const {
     assert(EBO_ != 0);
 
     glBindVertexArray(VAO_);
@@ -78,7 +78,7 @@ void GL::VAO::InitializeEBO(const std::vector<GLushort>& index_data) {
     indexes_count_ = index_data.size();
 }
 
-void GL::VAO::InitializeEBO(const GLushort* index_data, const unsigned int data_size) {
+void GL::VAO::InitializeEBO(const GLushort* index_data, unsigned int data_size) {
     assert(EBO_ == 0);
 
     glGenBuffers(1, &EBO_);

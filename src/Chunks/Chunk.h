@@ -12,18 +12,28 @@ public:
     glm::ivec3 global_coordinates;
     glm::ivec3 local_coordinates;
 
-    static const int WIDTH = 16;
-    static const int HEIGHT = 16;
-    static const int DEPTH = 16;
+    static const int DIRECTION_SIZE = 16;
+    static const int DIRECTION_SIZE_P2 = 256;
+
+    static const int WIDTH = DIRECTION_SIZE;
+    static const int HEIGHT = DIRECTION_SIZE;
+    static const int DEPTH = DIRECTION_SIZE;
     static const int VOLUME = WIDTH * HEIGHT * DEPTH;
 
     static const int VERTICES_COUNT_PER_SQUARE = 4;
     static const int INDEXES_COUNT_PER_SQUARE = 6;
     static const int FACES_COUNT_PER_CUBE = 6;
 
-    int VOXEL_FACES_CAPACITY = 512;
-    std::vector<uint64_t> vertex_data;
-    std::vector<uint32_t> index_data;
+    static const int STARTING_VOXEL_FACES_CAPACITY = 64;
+
+    int voxel_faces_size = 0;
+    int voxel_faces_capacity = STARTING_VOXEL_FACES_CAPACITY;
+
+    int vertex_data_size = 0;
+    int vertex_data_capacity = STARTING_VOXEL_FACES_CAPACITY * VERTICES_COUNT_PER_SQUARE;
+    uint64_t* vertex_data;
+
+    bool is_modified;
 
 private:
     static Chunk** chunk_storage_;
@@ -35,8 +45,9 @@ private:
                  uint16_t (&Z_rows)[Chunk::WIDTH][Chunk::HEIGHT]);
     void CullingChunksJoints();
 
-    bool IsBlocked(int x, int y, int z);
-    uint64_t AmbientOcclusion(int x, int y, int z, int direction);
+    inline bool IsBlocked(int x, int y, int z);
+    inline uint64_t AmbientOcclusion(int x, int y, int z, int direction);
+    inline void PushBack(uint64_t vertex);
 
 private:
     Chunk(const glm::ivec3& coordinates);
