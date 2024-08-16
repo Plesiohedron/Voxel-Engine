@@ -1,13 +1,16 @@
 #include "Engine.h"
-#include <chrono>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 
 Engine::Engine(const int window_width, const int window_height, const char* window_title)
-    : window_{window_width, window_height, window_title}, camera_{{0.0f, 0.0f, -5.0f}, glm::radians(90.0f)}, GUI_{} {
+    : window_{window_width, window_height, window_title}, camera_{{0.0f, 0.0f, -5.0f}, glm::radians(90.0f)},
+    GUI_{}, line_batch_{} {
 
     camera_.Rotate(0.0f, glm::radians(180.0f), 0.0f);
     camera_.camera_rotation_X = glm::radians(180.0f);
 
-    chunks_ = new Chunks(3, {0, 8, 0});
+    chunks_ = new Chunks(8, {0, 8, 0});
 
     if (chunks_ == nullptr) {
         std::cout << "Bad alloc: chunks_ (Engine)" << std::endl;
@@ -17,9 +20,23 @@ Engine::Engine(const int window_width, const int window_height, const char* wind
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
+    //glLineWidth(2.0f);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
-    glfwSwapInterval(1);
+    //glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
+    glClearColor(0.f, 0.f, 0.f, 1.0f);
+    //glfwSwapInterval(0);
+}
+
+void Engine::SaveScreenshot(const char* filename, int width, int height) const {
+    std::vector<unsigned char> pixels(width * height * 3);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+    stbi_flip_vertically_on_write(1);
+    if (stbi_write_png(filename, width, height, 3, pixels.data(), width * 3)) {
+        std::cout << "Screenshot saved to " << filename << std::endl;
+    } else {
+        std::cerr << "Failed to save screenshot" << std::endl;
+    }
 }
 
 void Engine::MainLoop() {
@@ -32,7 +49,8 @@ void Engine::MainLoop() {
 
     float speed = 15.0f;
 
-    bool switcher = false;
+    int index = 1;
+
     while (!window_.IsShouldClose()) {
         current_time = glfwGetTime();
         delta_time = current_time - last_time;
@@ -67,6 +85,25 @@ void Engine::MainLoop() {
                 camera_.position.y -= delta_time * speed;
             }
 
+            if (Events::KeyIsClicked(GLFW_KEY_1)) {
+                chunks_->storage_.selected_block = 1;
+            } else if (Events::KeyIsClicked(GLFW_KEY_2)) {
+                chunks_->storage_.selected_block = 2;
+            } else if (Events::KeyIsClicked(GLFW_KEY_3)) {
+                chunks_->storage_.selected_block = 3;
+            } else if (Events::KeyIsClicked(GLFW_KEY_4)) {
+                chunks_->storage_.selected_block = 4;
+            } else if (Events::KeyIsClicked(GLFW_KEY_5)) {
+                chunks_->storage_.selected_block = 5;
+            } else if (Events::KeyIsClicked(GLFW_KEY_6)) {
+                chunks_->storage_.selected_block = 6;
+            }
+
+            if (Events::KeyIsClicked(GLFW_KEY_F3)) {
+                SaveScreenshot(("screenshot" + std::to_string(index) + ".png").c_str(), window_.width, window_.height);
+                ++index;
+            }
+
             if (window_.is_resized) {
                 GUI_.crosshair.UpdateModel();
                 window_.is_resized = false;
@@ -87,37 +124,27 @@ void Engine::MainLoop() {
             }
 
             if (Events::KeyIsClicked(GLFW_KEY_E)) {
-                switcher = !switcher;
-                if (switcher) {
-                    chunks_->rendering_mode_ = GL_LINES;
+                chunks_->debug_mode = !chunks_->debug_mode;
+                if (chunks_->debug_mode) {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
                 } else {
-                    chunks_->rendering_mode_ = GL_TRIANGLES;
-                }
-            }
-
-            {
-                glm::vec3 end;
-                glm::vec3 norm;
-                glm::vec3 iend;
-                Voxel* voxel = chunks_->RayCast(camera_.position, camera_.vector_front, 10.0f, end, norm, iend);
-                if (voxel != nullptr) {
-                    if (Events::MouseIsClicked(GLFW_MOUSE_BUTTON_1)) {
-                        chunks_->SetVoxel(static_cast<int>(iend.x), static_cast<int>(iend.y), static_cast<int>(iend.z), 0);
-                    }
-                    if (Events::MouseIsClicked(GLFW_MOUSE_BUTTON_2)) {
-                        chunks_->SetVoxel(static_cast<int>(iend.x) + static_cast<int>(norm.x),
-                                          static_cast<int>(iend.y) + static_cast<int>(norm.y),
-                                          static_cast<int>(iend.z) + static_cast<int>(norm.z), 4);
-                    }
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 }
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+            chunks_->storage_.CaptureTarget(line_batch_, camera_);
+
+            chunks_->storage_.UpdateChanges();
             chunks_->PollUpdates();
             chunks_->Draw(camera_);
 
-            GUI_.crosshair.Draw();
+            if (line_batch_.draw_box) {
+                line_batch_.Draw(camera_);
+            }
+
+            //GUI_.crosshair.Draw();
         }
 
         window_.SwapBuffers();

@@ -20,6 +20,7 @@ namespace GL {
         ~SChunkVAO();
 
         void Bind() const;
+        static void Unbind();
 
         void AllocateVBO(size_t vertex_data_size);
         void FillVBOSection(const uint64_t* vertex_data, int vertex_data_size, int offset);

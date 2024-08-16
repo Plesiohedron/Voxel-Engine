@@ -1,5 +1,7 @@
 #include "Program.h"
 
+#include <fstream>
+
 GL::Program::Program(const std::string& name) {
     program_ = glCreateProgram();
 
@@ -36,6 +38,10 @@ void GL::Program::Link() const {
 
 void GL::Program::Use() const {
     glUseProgram(program_);
+}
+
+void GL::Program::Unuse() const {
+    glUseProgram(0);
 }
 
 void GL::Program::BindAttribute(GLuint index, const char* name) const {

@@ -15,7 +15,7 @@ namespace GL {
         SSBO();
         ~SSBO();
 
-        void InitializeMatrices(const std::vector<glm::mat4>& matrices_data, int binding_point);
+        void InitializeMatrices(const glm::mat4* matrices_data, int data_size, int binding_point);
 
     };
 } // namespace GL

@@ -12,6 +12,10 @@ void GL::Texture3D::Bind() const {
     glBindTexture(GL_TEXTURE_2D_ARRAY, handle_);
 }
 
+void GL::Texture3D::Unbind() const {
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
 void GL::Texture3D::SetAtlas(const Image& image) {
     switch (image.format) {
         case Image::RGB:
@@ -30,7 +34,6 @@ void GL::Texture3D::SetAtlas(const Image& image) {
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, handle_);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_format_GPU, VOXEL_IMAGE_WIDTH_, VOXEL_IMAGE_HEIGHT_, LAYERS_COUNT_, 0, GL_format_CPU, GL_UNSIGNED_BYTE, nullptr);
 
     MakeSubImages(image.data);
@@ -40,6 +43,13 @@ void GL::Texture3D::SetAtlas(const Image& image) {
 
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, 4);
+
+    glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }

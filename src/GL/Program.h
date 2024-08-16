@@ -1,8 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <fstream>
-
 #include <GL/glew.h>
 #include <GL/GL.h>
 #include <glm/glm.hpp>
@@ -18,6 +15,7 @@ namespace GL {
 
         void Link() const;
         void Use() const;
+        void Unuse() const;
 
         void BindAttribute(const GLuint index, const char* name) const;
         GLint GetUniformLocation(const char* name) const;

@@ -439,13 +439,13 @@ __kernel void GreedyMesh16bit(__global const uchar* voxels,
                              (bit << 24)       | (row << 18)       | (plane << 12) | (w << 6) | h);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (0 << 6) | h);
+                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (w << 6) | 0);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
                              ((bit + w) << 24) | ((row + h) << 18) | (plane << 12) | (0 << 6) | 0);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (w << 6) | 0);
+                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (0 << 6) | h);
                     ++vertex_data_index;
                 }
                 
@@ -518,13 +518,13 @@ __kernel void GreedyMesh16bit(__global const uchar* voxels,
                     ++vertex_data_index;
                 } else { // if (direction == 5)
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (w << 6) | 0);
+                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (0 << 6) | h);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
                              (bit << 24)       | (row << 18)       | (plane << 12) | (w << 6) | h);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (0 << 6) | h);
+                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (w << 6) | 0);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
                              ((bit + w) << 24) | ((row + h) << 18) | (plane << 12) | (0 << 6) | 0);
@@ -833,13 +833,13 @@ __kernel void GreedyMesh8bit(__global const uchar* voxels,
                              (bit << 24)       | (row << 18)       | (plane << 12) | (w << 6) | h);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (0 << 6) | h);
+                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (w << 6) | 0);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
                              ((bit + w) << 24) | ((row + h) << 18) | (plane << 12) | (0 << 6) | 0);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (w << 6) | 0);
+                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (0 << 6) | h);
                     ++vertex_data_index;
                 }
                 
@@ -912,13 +912,13 @@ __kernel void GreedyMesh8bit(__global const uchar* voxels,
                     ++vertex_data_index;
                 } else {
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (w << 6) | 0);
+                             ((bit + w) << 24) | (row << 18)       | (plane << 12) | (0 << 6) | h);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
                              (bit << 24)       | (row << 18)       | (plane << 12) | (w << 6) | h);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (0 << 6) | h);
+                             (bit << 24)       | ((row + h) << 18) | (plane << 12) | (w << 6) | 0);
                     ++vertex_data_index;
                     vertex_data[vertex_data_index] = (((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
                              ((bit + w) << 24) | ((row + h) << 18) | (plane << 12) | (0 << 6) | 0);

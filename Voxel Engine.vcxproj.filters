@@ -18,6 +18,11 @@
     <ClCompile Include="src\Chunks\Chunks.cpp" />
     <ClCompile Include="src\GL\SChunkVAO.cpp" />
     <ClCompile Include="src\GL\SSBO.cpp" />
+    <ClCompile Include="src\LineBatch\LineBatch.cpp" />
+    <ClCompile Include="src\Block\Block.cpp" />
+    <ClCompile Include="src\Lighting\Lightmap.cpp" />
+    <ClCompile Include="src\Lighting\LightProcessor.cpp" />
+    <ClCompile Include="src\Chunks\ChunkStorage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Engine\Engine.h" />
@@ -37,6 +42,11 @@
     <ClInclude Include="src\Chunks\Chunks.h" />
     <ClInclude Include="src\GL\SChunkVAO.h" />
     <ClInclude Include="src\GL\SSBO.h" />
+    <ClInclude Include="src\LineBatch\LineBatch.h" />
+    <ClInclude Include="src\Block\Block.h" />
+    <ClInclude Include="src\Lighting\Lightmap.h" />
+    <ClInclude Include="src\Lighting\LightProcessor.h" />
+    <ClInclude Include="src\Chunks\ChunkStorage.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -44,6 +54,8 @@
     <None Include="res\glsl\Chunks.frag" />
     <None Include="res\glsl\Crosshair.vert" />
     <None Include="res\glsl\Crosshair.frag" />
+    <None Include="res\glsl\Lines.vert" />
+    <None Include="res\glsl\Lines.frag" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\texture\Atlas.png" />

@@ -23,6 +23,8 @@ namespace GL {
         ~Texture2D();
 
         void Bind() const;
+        void Unbind() const;
+
         void SetImage(const Image& image);
         void SetEmpty(const unsigned int texture_width, const unsigned int texture_height);
     };

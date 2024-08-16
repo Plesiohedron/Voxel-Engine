@@ -1,44 +1,68 @@
 #pragma once
 
-#include <vector>
-
 #include <GL/glew.h>
 #include <GL/GL.h>
 
+#include <vector>
 #include <glm/glm.hpp>
 
 namespace GL {
-class VAO {
-private:
-    GLuint* VBOs_;
-    GLuint VAO_ = 0;
-    GLuint EBO_ = 0;
+    class VAO {
+    private:
+        std::vector<GLuint> VBOs_;
+        GLuint VAO_ = 0;
+        GLuint EBO_ = 0;
 
-    unsigned int VBOs_array_size_ = 0;
-    unsigned int indexes_count_ = 0;
-    unsigned int attributes_count_ = 0;
+        unsigned int indexes_count_ = 0;
+        unsigned int attributes_count_ = 0;
 
-    static const int CHUNK_VERTEX_SIZE_ = 3;
-    static const int CHUNK_ATTRIBUTES_COUNT_ = 3;
+    public:
+        VAO();
+        VAO(const VAO&) = delete;
+        ~VAO();
 
-public:
-    VAO();
-    VAO(const VAO&) = delete;
-    ~VAO();
+        void Bind() const;
+        static void Unbind();
+        void Draw(GLenum primitive_type) const;
 
-    void Bind() const;
-    void Draw(GLenum primitive_type) const;
+        template <typename T>
+        void InitializeFloatVBO(const std::vector<T>& vertex_data) {
+            GLuint VBO;
 
-    void InitializeBasicVBO(const std::vector<float>& vertex_data);
-    void InitializeBasicVBO(const std::vector<glm::vec2>& vertex_data);
-    void InitializeBasicVBO(const std::vector<glm::vec3>& vertex_data);
+            glGenBuffers(1, &VBO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(T), vertex_data.data(), GL_STATIC_DRAW);
+            glVertexAttribPointer(VBOs_.size(), sizeof(T) / sizeof(float), GL_FLOAT, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(VBOs_.size());
 
-    void InitializeEBO(const std::vector<GLushort>& index_data);
-    void InitializeEBO(const GLushort* index_data, unsigned int data_size);
+            VBOs_.push_back(VBO);
+        };
 
-    void PostInitialization() const;
+        template <typename U>
+        void AllocateFloatVBO(const std::vector<U>& vertex_data) {
+            GLuint VBO;
 
-    void DeinitializeVBO();
-    void DeinitializeEBO();
-};
+            glGenBuffers(1, &VBO);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, vertex_data.capacity() * sizeof(U), nullptr, GL_DYNAMIC_DRAW);
+            glVertexAttribPointer(VBOs_.size(), sizeof(U) / sizeof(float), GL_FLOAT, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(VBOs_.size());
+
+            VBOs_.push_back(VBO);
+        };
+
+        template <typename V>
+        void AssignFloatVBO(const std::vector<V>& vertex_data, GLuint attribute) {
+            glBindBuffer(GL_ARRAY_BUFFER, VBOs_[attribute]);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(V) * vertex_data.size(), vertex_data.data());
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        };
+
+        void InitializeEBO(const std::vector<unsigned short int>& index_data);
+        void AllocateEBO(const std::vector<unsigned short int>& index_data);
+        void AssignEBO(const std::vector<unsigned short int>& index_data);
+
+        void DeinitializeVBO();
+        void DeinitializeEBO();
+    };
 } // namespace GL

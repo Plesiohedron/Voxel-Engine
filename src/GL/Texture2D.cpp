@@ -12,6 +12,10 @@ void GL::Texture2D::Bind() const {
     glBindTexture(GL_TEXTURE_2D, handle_);
 }
 
+void GL::Texture2D::Unbind() const {
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void GL::Texture2D::SetImage(const Image& image) {
     switch (image.format) {
         case Image::RGB:

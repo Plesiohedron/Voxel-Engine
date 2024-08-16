@@ -4,6 +4,7 @@
 #include "../Camera/Camera.h"
 #include "../GUI/GUI.h"
 #include "../Chunks/Chunks.h"
+#include "../LineBatch/LineBatch.h"
 
 class Engine {
 public:
@@ -18,6 +19,7 @@ private:
     Window window_;
     Camera camera_;
     GUI GUI_;
+    LineBatch line_batch_;
     Chunks* chunks_;
 
 private:
@@ -28,4 +30,6 @@ private:
     Engine(Engine&&) = delete;
     Engine& operator=(const Engine&) = delete;
     Engine& operator=(Engine&&) = delete;
+
+    void SaveScreenshot(const char* filename, int width, int height) const;
 };

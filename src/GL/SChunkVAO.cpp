@@ -10,6 +10,10 @@ void GL::SChunkVAO::Bind() const {
     glBindVertexArray(VAO);
 }
 
+void GL::SChunkVAO::Unbind() {
+    glBindVertexArray(0);
+}
+
 void GL::SChunkVAO::AllocateVBO(size_t vertex_data_size) {
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);

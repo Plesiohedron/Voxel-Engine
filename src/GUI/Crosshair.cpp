@@ -20,10 +20,10 @@ Crosshair::Crosshair() : model_(1.0f) {
     region_texture_->SetEmpty(WIDTH, HEIGHT);
 
     VAO_->Bind();
-    VAO_->InitializeBasicVBO(position_);
-    VAO_->InitializeBasicVBO(UV_);
+    VAO_->InitializeFloatVBO(position_);
+    VAO_->InitializeFloatVBO(UV_);
     VAO_->InitializeEBO(indexes_);
-    VAO_->PostInitialization();
+    GL::VAO::Unbind();
 
     UpdateModel();
 }
@@ -32,7 +32,7 @@ void Crosshair::MakeCrosshairRegionTexture() {
     glReadPixels(Events::window->width / 2 - WIDTH / 2, Events::window->height / 2 - HEIGHT / 2, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, region_colors_);
     region_texture_->Bind();
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, WIDTH, HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, region_colors_);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    region_texture_->Unbind();
 }
 
 void Crosshair::UpdateModel() {
@@ -41,9 +41,7 @@ void Crosshair::UpdateModel() {
 }
 
 void Crosshair::Draw() {
-    if (Events::cursor_is_moving && Events::cursor_is_locked) {
-        MakeCrosshairRegionTexture();
-    }
+    //MakeCrosshairRegionTexture();
 
     shader_->Use();
     shader_->UniformMatrix(uniform_model_loc_, model_);

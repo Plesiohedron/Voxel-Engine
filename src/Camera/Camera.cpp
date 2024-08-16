@@ -19,7 +19,7 @@ void Camera::Rotate(const float x, const float y, const float z) {
 }
 
 glm::mat4 Camera::GetProjection() const {
-    return glm::perspective(FOV, Events::window->GetAspect(), 0.01f, 150.0f);
+    return glm::perspective(FOV, Events::window->GetAspect(), 0.01f, 500.0f);
 }
 
 glm::mat4 Camera::GetView() const {

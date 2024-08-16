@@ -8,5 +8,5 @@ out vec4 color;
 uniform sampler2DArray texture0;
 
 void main() {
-    color = frag_color * texture(texture0, vec3(frag_UV));
+    color = frag_color * texture(texture0, frag_UV);
 }

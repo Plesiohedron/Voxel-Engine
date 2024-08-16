@@ -5,9 +5,6 @@
 #include "../GL/Texture2D.h"
 #include "../Events/Events.h"
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-
 class Crosshair {
     friend class GUI;
 
@@ -33,8 +30,8 @@ private:
         {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 0.0f}
     };
     const std::vector<glm::vec2> UV_ = {
-        {0.0f, 1.0f / 16}, {1.0f / 16, 1.0f / 16},
-        {0.0f, 0.0f}, {1.0f / 16, 0.0f}
+        {0.0f, 1.0f / 16.0f}, {1.0f / 16.0f, 1.0f / 16.0f},
+        {0.0f, 0.0f},         {1.0f / 16.0f, 0.0f}
     };
     const std::vector<GLushort> indexes_ = {0, 1, 2, 2, 1, 3};
 

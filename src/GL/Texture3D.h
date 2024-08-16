@@ -30,6 +30,7 @@ namespace GL {
         ~Texture3D();
 
         void Bind() const;
+        void Unbind() const;
         void SetAtlas(const Image& image);
 
     private:
