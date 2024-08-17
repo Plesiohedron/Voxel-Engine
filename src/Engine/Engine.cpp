@@ -10,7 +10,7 @@ Engine::Engine(const int window_width, const int window_height, const char* wind
     camera_.Rotate(0.0f, glm::radians(180.0f), 0.0f);
     camera_.camera_rotation_X = glm::radians(180.0f);
 
-    chunks_ = new Chunks(8, {0, 8, 0});
+    chunks_ = new Chunks(10, {0, 8, 0});
 
     if (chunks_ == nullptr) {
         std::cout << "Bad alloc: chunks_ (Engine)" << std::endl;
@@ -24,7 +24,7 @@ Engine::Engine(const int window_width, const int window_height, const char* wind
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //glClearColor(0.529f, 0.808f, 0.922f, 1.0f);
     glClearColor(0.f, 0.f, 0.f, 1.0f);
-    //glfwSwapInterval(0);
+    glfwSwapInterval(0);
 }
 
 void Engine::SaveScreenshot(const char* filename, int width, int height) const {

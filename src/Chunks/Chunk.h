@@ -7,6 +7,14 @@
 #include <vector>
 #include <glm/glm.hpp>
 
+struct Vertex {
+    uint32_t l0;
+    uint32_t l1;
+    uint32_t l2;
+    uint32_t l3;
+    uint32_t dimension;
+};
+
 class Chunk {
     friend class ChunkStorage;
     friend class LightProcessor;
@@ -35,7 +43,7 @@ public:
 
     int vertex_data_size = 0;
     int vertex_data_capacity = STARTING_VOXEL_FACES_CAPACITY * VERTICES_COUNT_PER_SQUARE;
-    uint64_t* vertex_data;
+    Vertex* vertex_data;
 
     bool is_modified;
 
@@ -54,7 +62,7 @@ private:
 
     inline bool IsBlocked(int x, int y, int z) const;
     inline uint32_t Light(int x, int y, int z, int direction, int vertex) const;
-    inline void PushBack(uint64_t vertex);
+    inline void PushBack(Vertex vertex);
 
     void GreedyMesh();
 

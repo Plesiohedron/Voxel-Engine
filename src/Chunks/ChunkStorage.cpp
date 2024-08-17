@@ -198,6 +198,8 @@ Voxel* ChunkStorage::GetVoxel(int x, int y, int z) const {
     return nullptr;
 }
 
+// Don't look...
+
 void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
     Chunk* chunk = GetChunkByVoxel(x, y, z);
 
@@ -222,6 +224,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[1][0 * Chunk::DEPTH + z] = neighbouring_chunk->face_planes_[1][0 * Chunk::DEPTH + z] & ~(1 << y);
+
                 }
             }
 
@@ -238,6 +241,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[0][(Chunk::WIDTH - 1) * Chunk::DEPTH + z] =
                         neighbouring_chunk->face_planes_[0][(Chunk::WIDTH - 1) * Chunk::DEPTH + z] & ~(1 << y);
+
                 }
             }
 
@@ -266,6 +270,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y + 1, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[3][0 * Chunk::WIDTH + x] = neighbouring_chunk->face_planes_[3][0 * Chunk::WIDTH + x] & ~(1 << z);
+
                 }
             }
 
@@ -282,6 +287,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y - 1, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[2][(Chunk::HEIGHT - 1) * Chunk::WIDTH + x] =
                         neighbouring_chunk->face_planes_[2][(Chunk::HEIGHT - 1) * Chunk::WIDTH + x] & ~(1 << z);
+
                 }
             }
 
@@ -311,6 +317,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y, chunk->local_coordinates.z + 1)) {
                     neighbouring_chunk->face_planes_[5][0 * Chunk::HEIGHT + y] =
                         neighbouring_chunk->face_planes_[5][0 * Chunk::HEIGHT + y] & ~(1 << x);
+
                 }
             }
 
@@ -327,6 +334,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y, chunk->local_coordinates.z - 1)) {
                     neighbouring_chunk->face_planes_[4][(Chunk::DEPTH - 1) * Chunk::HEIGHT + y] =
                         neighbouring_chunk->face_planes_[4][(Chunk::DEPTH - 1) * Chunk::HEIGHT + y] & ~(1 << x);
+
                 }
             }
 
@@ -358,6 +366,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[1][0 * Chunk::DEPTH + z] |= (1 << y);
+
                 }
             }
 
@@ -373,6 +382,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[0][(Chunk::WIDTH - 1) * Chunk::DEPTH + z] |= (1 << y);
+
                 }
             }
 
@@ -402,6 +412,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y + 1, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[3][0 * Chunk::WIDTH + x] |= (1 << z);
+
                 }
             }
 
@@ -417,6 +428,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y - 1, chunk->local_coordinates.z)) {
                     neighbouring_chunk->face_planes_[2][(Chunk::HEIGHT - 1) * Chunk::WIDTH + x] |= (1 << z);
+
                 }
             }
 
@@ -446,6 +458,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y, chunk->local_coordinates.z + 1)) {
                     neighbouring_chunk->face_planes_[5][0 * Chunk::HEIGHT + y] |= (1 << x);
+
                 }
             }
 
@@ -461,6 +474,7 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
             } else {
                 if (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y, chunk->local_coordinates.z - 1)) {
                     neighbouring_chunk->face_planes_[4][(Chunk::DEPTH - 1) * Chunk::HEIGHT + y] |= (1 << x);
+
                 }
             }
 
@@ -482,6 +496,106 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
                 chunk->face_planes_[4][(z - 1) * Chunk::HEIGHT + y] |= (1 << x);
             }
         }
+    }
+
+    if (x == 0 && (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y, chunk->local_coordinates.z))) {
+        neighbouring_chunk->is_modified = true;
+
+        if (y == 0 &&
+            (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y - 1, chunk->local_coordinates.z))) {
+            neighbouring_chunk->is_modified = true;
+
+            if (z == 0 &&
+                (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y - 1, chunk->local_coordinates.z - 1))) {
+                neighbouring_chunk->is_modified = true;
+            } else if (z == Chunk::DEPTH - 1 &&
+                       (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y - 1, chunk->local_coordinates.z + 1))) {
+                neighbouring_chunk->is_modified = true;
+            }       
+        } else if (y == Chunk::HEIGHT - 1 &&
+                   (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y + 1, chunk->local_coordinates.z))) {
+            neighbouring_chunk->is_modified = true;
+
+            if (z == 0 &&
+                (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y + 1, chunk->local_coordinates.z - 1))) {
+                neighbouring_chunk->is_modified = true;
+            } else if (z == Chunk::DEPTH - 1 &&
+                       (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y + 1, chunk->local_coordinates.z + 1))) {
+                neighbouring_chunk->is_modified = true;
+            }   
+        }
+
+        if (z == 0 &&
+            (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y, chunk->local_coordinates.z - 1))) {
+            neighbouring_chunk->is_modified = true;
+        } else if (z == Chunk::DEPTH - 1 &&
+                   (neighbouring_chunk = GetChunk(chunk->local_coordinates.x - 1, chunk->local_coordinates.y, chunk->local_coordinates.z + 1))) {
+            neighbouring_chunk->is_modified = true;
+        }   
+    } else if (x == Chunk::WIDTH - 1 && (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y, chunk->local_coordinates.z))) {
+        neighbouring_chunk->is_modified = true;
+
+        if (y == 0 &&
+            (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y - 1, chunk->local_coordinates.z))) {
+            neighbouring_chunk->is_modified = true;
+
+            if (z == 0 &&
+                (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y - 1, chunk->local_coordinates.z - 1))) {
+                neighbouring_chunk->is_modified = true;
+            } else if (z == Chunk::DEPTH - 1 &&
+                       (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y - 1, chunk->local_coordinates.z + 1))) {
+                neighbouring_chunk->is_modified = true;
+            }       
+        } else if (y == Chunk::HEIGHT - 1 &&
+                   (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y + 1, chunk->local_coordinates.z))) {
+            neighbouring_chunk->is_modified = true;
+
+            if (z == 0 &&
+                (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y + 1, chunk->local_coordinates.z - 1))) {
+                neighbouring_chunk->is_modified = true;
+            } else if (z == Chunk::DEPTH - 1 &&
+                       (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y + 1, chunk->local_coordinates.z + 1))) {
+                neighbouring_chunk->is_modified = true;
+            }   
+        }
+
+        if (z == 0 &&
+            (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y, chunk->local_coordinates.z - 1))) {
+            neighbouring_chunk->is_modified = true;
+        } else if (z == Chunk::DEPTH - 1 &&
+                   (neighbouring_chunk = GetChunk(chunk->local_coordinates.x + 1, chunk->local_coordinates.y, chunk->local_coordinates.z + 1))) {
+            neighbouring_chunk->is_modified = true;
+        }   
+    }
+
+    if (y == 0 && (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y - 1, chunk->local_coordinates.z))) {
+        neighbouring_chunk->is_modified = true;
+
+        if (z == 0 &&
+            (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y - 1, chunk->local_coordinates.z - 1))) {
+            neighbouring_chunk->is_modified = true;
+        } else if (z == Chunk::DEPTH - 1 &&
+                   (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y - 1, chunk->local_coordinates.z + 1))) {
+            neighbouring_chunk->is_modified = true;
+        }
+    } else if (y == Chunk::HEIGHT - 1 &&
+               (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y + 1, chunk->local_coordinates.z))) {
+        neighbouring_chunk->is_modified = true;
+
+        if (z == 0 &&
+            (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y + 1, chunk->local_coordinates.z - 1))) {
+            neighbouring_chunk->is_modified = true;
+        } else if (z == Chunk::DEPTH - 1 &&
+                   (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y + 1, chunk->local_coordinates.z + 1))) {
+            neighbouring_chunk->is_modified = true;
+        }
+    }
+
+    if (z == 0 && (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y, chunk->local_coordinates.z - 1))) {
+        neighbouring_chunk->is_modified = true;
+    } else if (z == Chunk::DEPTH - 1 &&
+               (neighbouring_chunk = GetChunk(chunk->local_coordinates.x, chunk->local_coordinates.y, chunk->local_coordinates.z + 1))) {
+        neighbouring_chunk->is_modified = true;
     }
 }
 

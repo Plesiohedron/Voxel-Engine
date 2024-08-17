@@ -18,7 +18,7 @@ Chunk::Chunk(const glm::ivec3& coordinates, Voxel* voxels, uint16_t* lightmap, u
     }
     chunk_storage_ = chunk_storage;
 
-    vertex_data = new uint64_t[vertex_data_capacity];
+    vertex_data = new Vertex[vertex_data_capacity];
 
     if (vertex_data == nullptr) {
         std::cout << "Bad alloc: vertex_data" << std::endl;
@@ -289,262 +289,262 @@ uint32_t Chunk::Light(int x, int y, int z, int direction, int vertex) const {
 
     if (direction < 2) {
         if (vertex == 0) {
-            r = chunk_storage_->GetLight(x, y,     z,     0) * 2 +
+            r = chunk_storage_->GetLight(x, y,     z,     0) +
                 chunk_storage_->GetLight(x, y - 1, z - 1, 0) +
                 chunk_storage_->GetLight(x, y - 1, z,     0) +
                 chunk_storage_->GetLight(x, y,     z - 1, 0);
 
-            g = chunk_storage_->GetLight(x, y,     z,     1) * 2 +
+            g = chunk_storage_->GetLight(x, y,     z,     1) +
                 chunk_storage_->GetLight(x, y - 1, z - 1, 1) +
                 chunk_storage_->GetLight(x, y - 1, z,     1) +
                 chunk_storage_->GetLight(x, y,     z - 1, 1);
 
-            b = chunk_storage_->GetLight(x, y,     z,     2) * 2 +
+            b = chunk_storage_->GetLight(x, y,     z,     2) +
                 chunk_storage_->GetLight(x, y - 1, z - 1, 2) +
                 chunk_storage_->GetLight(x, y - 1, z,     2) +
                 chunk_storage_->GetLight(x, y,     z - 1, 2);
 
-            s = chunk_storage_->GetLight(x, y,     z,     3) * 2 +
+            s = chunk_storage_->GetLight(x, y,     z,     3) +
                 chunk_storage_->GetLight(x, y - 1, z - 1, 3) +
                 chunk_storage_->GetLight(x, y - 1, z,     3) +
                 chunk_storage_->GetLight(x, y,     z - 1, 3);
         } else if (vertex == 1) {
-            r = chunk_storage_->GetLight(x, y,     z,     0) * 2 +
+            r = chunk_storage_->GetLight(x, y,     z,     0) +
                 chunk_storage_->GetLight(x, y,     z - 1, 0) +
                 chunk_storage_->GetLight(x, y + 1, z - 1, 0) +
                 chunk_storage_->GetLight(x, y + 1, z,     0);
 
-            g = chunk_storage_->GetLight(x, y,     z,     1) * 2 +
+            g = chunk_storage_->GetLight(x, y,     z,     1) +
                 chunk_storage_->GetLight(x, y,     z - 1, 1) +
                 chunk_storage_->GetLight(x, y + 1, z - 1, 1) +
                 chunk_storage_->GetLight(x, y + 1, z,     1);
 
-            b = chunk_storage_->GetLight(x, y,     z,     2) * 2 +
+            b = chunk_storage_->GetLight(x, y,     z,     2) +
                 chunk_storage_->GetLight(x, y,     z - 1, 2) +
                 chunk_storage_->GetLight(x, y + 1, z - 1, 2) +
                 chunk_storage_->GetLight(x, y + 1, z,     2);
 
-            s = chunk_storage_->GetLight(x, y,     z,     3) * 2 +
+            s = chunk_storage_->GetLight(x, y,     z,     3) +
                 chunk_storage_->GetLight(x, y,     z - 1, 3) +
                 chunk_storage_->GetLight(x, y + 1, z - 1, 3) +
                 chunk_storage_->GetLight(x, y + 1, z,     3);
         } else if (vertex == 2) {
-            r = chunk_storage_->GetLight(x, y,     z,     0) * 2 +
+            r = chunk_storage_->GetLight(x, y,     z,     0) +
                 chunk_storage_->GetLight(x, y + 1, z,     0) +
                 chunk_storage_->GetLight(x, y + 1, z + 1, 0) +
                 chunk_storage_->GetLight(x, y, z + 1,     0);
 
-            g = chunk_storage_->GetLight(x, y,     z,     1) * 2 +
+            g = chunk_storage_->GetLight(x, y,     z,     1) +
                 chunk_storage_->GetLight(x, y + 1, z,     1) +
                 chunk_storage_->GetLight(x, y + 1, z + 1, 1) +
                 chunk_storage_->GetLight(x, y, z + 1,     1);
 
-            b = chunk_storage_->GetLight(x, y,     z,     2) * 2 +
+            b = chunk_storage_->GetLight(x, y,     z,     2) +
                 chunk_storage_->GetLight(x, y + 1, z,     2) +
                 chunk_storage_->GetLight(x, y + 1, z + 1, 2) +
                 chunk_storage_->GetLight(x, y, z + 1,     2);
 
-            s = chunk_storage_->GetLight(x, y,     z,     3) * 2 +
+            s = chunk_storage_->GetLight(x, y,     z,     3) +
                 chunk_storage_->GetLight(x, y + 1, z,     3) +
                 chunk_storage_->GetLight(x, y + 1, z + 1, 3) +
                 chunk_storage_->GetLight(x, y, z + 1,     3);
         } else {  // if vertex == 3
-            r = chunk_storage_->GetLight(x, y,     z,     0) * 2 +
+            r = chunk_storage_->GetLight(x, y,     z,     0) +
                 chunk_storage_->GetLight(x, y - 1, z,     0) +
                 chunk_storage_->GetLight(x, y,     z + 1, 0) +
                 chunk_storage_->GetLight(x, y - 1, z + 1, 0);
 
-            g = chunk_storage_->GetLight(x, y,     z,     1) * 2 +
+            g = chunk_storage_->GetLight(x, y,     z,     1) +
                 chunk_storage_->GetLight(x, y - 1, z,     1) +
                 chunk_storage_->GetLight(x, y,     z + 1, 1) +
                 chunk_storage_->GetLight(x, y - 1, z + 1, 1);
 
-            b = chunk_storage_->GetLight(x, y,     z,     2) * 2 +
+            b = chunk_storage_->GetLight(x, y,     z,     2) +
                 chunk_storage_->GetLight(x, y - 1, z,     2) +
                 chunk_storage_->GetLight(x, y,     z + 1, 2) +
                 chunk_storage_->GetLight(x, y - 1, z + 1, 2);
 
-            s = chunk_storage_->GetLight(x, y,     z,     3) * 2 +
+            s = chunk_storage_->GetLight(x, y,     z,     3) +
                 chunk_storage_->GetLight(x, y - 1, z,     3) +
                 chunk_storage_->GetLight(x, y,     z + 1, 3) +
                 chunk_storage_->GetLight(x, y - 1, z + 1, 3);
         }
     } else if (direction < 4) {
         if (vertex == 0) {
-            r = chunk_storage_->GetLight(x,     y, z,     0) * 2 +
+            r = chunk_storage_->GetLight(x,     y, z,     0) +
                 chunk_storage_->GetLight(x - 1, y, z - 1, 0) +
                 chunk_storage_->GetLight(x,     y, z - 1, 0) +
                 chunk_storage_->GetLight(x - 1, y, z,     0);
 
-            g = chunk_storage_->GetLight(x,     y, z,     1) * 2 +
+            g = chunk_storage_->GetLight(x,     y, z,     1) +
                 chunk_storage_->GetLight(x - 1, y, z - 1, 1) +
                 chunk_storage_->GetLight(x,     y, z - 1, 1) +
                 chunk_storage_->GetLight(x - 1, y, z,     1);
 
-            b = chunk_storage_->GetLight(x,     y, z,     2) * 2 +
+            b = chunk_storage_->GetLight(x,     y, z,     2) +
                 chunk_storage_->GetLight(x - 1, y, z - 1, 2) +
                 chunk_storage_->GetLight(x,     y, z - 1, 2) +
                 chunk_storage_->GetLight(x - 1, y, z,     2);
 
-            s = chunk_storage_->GetLight(x,     y, z,     3) * 2 +
+            s = chunk_storage_->GetLight(x,     y, z,     3) +
                 chunk_storage_->GetLight(x - 1, y, z - 1, 3) +
                 chunk_storage_->GetLight(x,     y, z - 1, 3) +
                 chunk_storage_->GetLight(x - 1, y, z,     3);
         } else if (vertex == 1) {
-            r = chunk_storage_->GetLight(x,     y, z,     0) * 2 +
+            r = chunk_storage_->GetLight(x,     y, z,     0) +
                 chunk_storage_->GetLight(x,     y, z - 1, 0) +
                 chunk_storage_->GetLight(x + 1, y, z - 1, 0) +
                 chunk_storage_->GetLight(x + 1, y, z,     0);
 
-            g = chunk_storage_->GetLight(x,     y, z,     1) * 2 +
+            g = chunk_storage_->GetLight(x,     y, z,     1) +
                 chunk_storage_->GetLight(x,     y, z - 1, 1) +
                 chunk_storage_->GetLight(x + 1, y, z - 1, 1) +
                 chunk_storage_->GetLight(x + 1, y, z,     1);
 
-            b = chunk_storage_->GetLight(x,     y, z,     2) * 2 +
+            b = chunk_storage_->GetLight(x,     y, z,     2) +
                 chunk_storage_->GetLight(x,     y, z - 1, 2) +
                 chunk_storage_->GetLight(x + 1, y, z - 1, 2) +
                 chunk_storage_->GetLight(x + 1, y, z,     2);
 
-            s = chunk_storage_->GetLight(x,     y, z,     3) * 2 +
+            s = chunk_storage_->GetLight(x,     y, z,     3) +
                 chunk_storage_->GetLight(x,     y, z - 1, 3) +
                 chunk_storage_->GetLight(x + 1, y, z - 1, 3) +
                 chunk_storage_->GetLight(x + 1, y, z,     3);
         } else if (vertex == 2) {
-            r = chunk_storage_->GetLight(x,     y, z,     0) * 2 +
+            r = chunk_storage_->GetLight(x,     y, z,     0) +
                 chunk_storage_->GetLight(x + 1, y, z,     0) +
                 chunk_storage_->GetLight(x + 1, y, z + 1, 0) +
                 chunk_storage_->GetLight(x,     y, z + 1, 0);
 
-            g = chunk_storage_->GetLight(x,     y, z,     1) * 2 +
+            g = chunk_storage_->GetLight(x,     y, z,     1) +
                 chunk_storage_->GetLight(x + 1, y, z,     1) +
                 chunk_storage_->GetLight(x + 1, y, z + 1, 1) +
                 chunk_storage_->GetLight(x,     y, z + 1, 1);
 
-            b = chunk_storage_->GetLight(x,     y, z,     2) * 2 +
+            b = chunk_storage_->GetLight(x,     y, z,     2) +
                 chunk_storage_->GetLight(x + 1, y, z,     2) +
                 chunk_storage_->GetLight(x + 1, y, z + 1, 2) +
                 chunk_storage_->GetLight(x,     y, z + 1, 2);
 
-            s = chunk_storage_->GetLight(x,     y, z,     3) * 2 +
+            s = chunk_storage_->GetLight(x,     y, z,     3) +
                 chunk_storage_->GetLight(x + 1, y, z,     3) +
                 chunk_storage_->GetLight(x + 1, y, z + 1, 3) +
                 chunk_storage_->GetLight(x,     y, z + 1, 3);
         } else {  // if vertex == 3
-            r = chunk_storage_->GetLight(x,     y, z,     0) * 2 +
+            r = chunk_storage_->GetLight(x,     y, z,     0) +
                 chunk_storage_->GetLight(x - 1, y, z,     0) +
                 chunk_storage_->GetLight(x,     y, z + 1, 0) +
                 chunk_storage_->GetLight(x - 1, y, z + 1, 0);
 
-            g = chunk_storage_->GetLight(x,     y, z,     1) * 2 +
+            g = chunk_storage_->GetLight(x,     y, z,     1) +
                 chunk_storage_->GetLight(x - 1, y, z,     1) +
                 chunk_storage_->GetLight(x,     y, z + 1, 1) +
                 chunk_storage_->GetLight(x - 1, y, z + 1, 1);
 
-            b = chunk_storage_->GetLight(x,     y, z,     2) * 2 +
+            b = chunk_storage_->GetLight(x,     y, z,     2) +
                 chunk_storage_->GetLight(x - 1, y, z,     2) +
                 chunk_storage_->GetLight(x,     y, z + 1, 2) +
                 chunk_storage_->GetLight(x - 1, y, z + 1, 2);
 
-            s = chunk_storage_->GetLight(x,     y, z,     3) * 2 +
+            s = chunk_storage_->GetLight(x,     y, z,     3) +
                 chunk_storage_->GetLight(x - 1, y, z,     3) +
                 chunk_storage_->GetLight(x,     y, z + 1, 3) +
                 chunk_storage_->GetLight(x - 1, y, z + 1, 3);
         }
     } else {  // if (direction < 6)
         if (vertex == 0) {
-            r = chunk_storage_->GetLight(x,     y,     z, 0) * 2 +
+            r = chunk_storage_->GetLight(x,     y,     z, 0) +
                 chunk_storage_->GetLight(x - 1, y - 1, z, 0) +
                 chunk_storage_->GetLight(x - 1, y,     z, 0) +
                 chunk_storage_->GetLight(x,     y - 1, z, 0);
 
-            g = chunk_storage_->GetLight(x,     y,     z, 1) * 2 +
+            g = chunk_storage_->GetLight(x,     y,     z, 1) +
                 chunk_storage_->GetLight(x - 1, y - 1, z, 1) +
                 chunk_storage_->GetLight(x - 1, y,     z, 1) +
                 chunk_storage_->GetLight(x,     y - 1, z, 1);
 
-            b = chunk_storage_->GetLight(x,     y,     z, 2) * 2 +
+            b = chunk_storage_->GetLight(x,     y,     z, 2) +
                 chunk_storage_->GetLight(x - 1, y - 1, z, 2) +
                 chunk_storage_->GetLight(x - 1, y,     z, 2) +
                 chunk_storage_->GetLight(x,     y - 1, z, 2);
 
-            s = chunk_storage_->GetLight(x,     y,     z, 3) * 2 +
+            s = chunk_storage_->GetLight(x,     y,     z, 3) +
                 chunk_storage_->GetLight(x - 1, y - 1, z, 3) +
                 chunk_storage_->GetLight(x - 1, y,     z, 3) +
                 chunk_storage_->GetLight(x,     y - 1, z, 3);
         } else if (vertex == 1) {
-            r = chunk_storage_->GetLight(x,     y,     z, 0) * 2 +
+            r = chunk_storage_->GetLight(x,     y,     z, 0) +
                 chunk_storage_->GetLight(x - 1, y,     z, 0) +
                 chunk_storage_->GetLight(x - 1, y + 1, z, 0) +
                 chunk_storage_->GetLight(x,     y + 1, z, 0);
 
-            g = chunk_storage_->GetLight(x,     y,     z, 1) * 2 +
+            g = chunk_storage_->GetLight(x,     y,     z, 1) +
                 chunk_storage_->GetLight(x - 1, y,     z, 1) +
                 chunk_storage_->GetLight(x - 1, y + 1, z, 1) +
                 chunk_storage_->GetLight(x,     y + 1, z, 1);
 
-            b = chunk_storage_->GetLight(x,     y,     z, 2) * 2 +
+            b = chunk_storage_->GetLight(x,     y,     z, 2) +
                 chunk_storage_->GetLight(x - 1, y,     z, 2) +
                 chunk_storage_->GetLight(x - 1, y + 1, z, 2) +
                 chunk_storage_->GetLight(x,     y + 1, z, 2);
 
-            s = chunk_storage_->GetLight(x,     y,     z, 3) * 2 +
+            s = chunk_storage_->GetLight(x,     y,     z, 3) +
                 chunk_storage_->GetLight(x - 1, y,     z, 3) +
                 chunk_storage_->GetLight(x - 1, y + 1, z, 3) +
                 chunk_storage_->GetLight(x,     y + 1, z, 3);
         } else if (vertex == 2) {
-            r = chunk_storage_->GetLight(x,     y,     z, 0) * 2 +
+            r = chunk_storage_->GetLight(x,     y,     z, 0) +
                 chunk_storage_->GetLight(x,     y + 1, z, 0) +
                 chunk_storage_->GetLight(x + 1, y + 1, z, 0) +
                 chunk_storage_->GetLight(x + 1, y,     z, 0);
 
-            g = chunk_storage_->GetLight(x,     y,     z, 1) * 2 +
+            g = chunk_storage_->GetLight(x,     y,     z, 1) +
                 chunk_storage_->GetLight(x,     y + 1, z, 1) +
                 chunk_storage_->GetLight(x + 1, y + 1, z, 1) +
                 chunk_storage_->GetLight(x + 1, y,     z, 1);
 
-            b = chunk_storage_->GetLight(x,     y,     z, 2) * 2 +
+            b = chunk_storage_->GetLight(x,     y,     z, 2) +
                 chunk_storage_->GetLight(x,     y + 1, z, 2) +
                 chunk_storage_->GetLight(x + 1, y + 1, z, 2) +
                 chunk_storage_->GetLight(x + 1, y,     z, 2);
 
-            s = chunk_storage_->GetLight(x,     y,     z, 3) * 2 +
+            s = chunk_storage_->GetLight(x,     y,     z, 3) +
                 chunk_storage_->GetLight(x,     y + 1, z, 3) +
                 chunk_storage_->GetLight(x + 1, y + 1, z, 3) +
                 chunk_storage_->GetLight(x + 1, y,     z, 3);
         } else {  // if vertex == 3
-            r = chunk_storage_->GetLight(x,     y,     z, 0) * 2 +
+            r = chunk_storage_->GetLight(x,     y,     z, 0) +
                 chunk_storage_->GetLight(x,     y - 1, z, 0) +
                 chunk_storage_->GetLight(x + 1, y,     z, 0) +
                 chunk_storage_->GetLight(x + 1, y - 1, z, 0);
 
-            g = chunk_storage_->GetLight(x,     y,     z, 1) * 2 +
+            g = chunk_storage_->GetLight(x,     y,     z, 1) +
                 chunk_storage_->GetLight(x,     y - 1, z, 1) +
                 chunk_storage_->GetLight(x + 1, y,     z, 1) +
                 chunk_storage_->GetLight(x + 1, y - 1, z, 1);
 
-            b = chunk_storage_->GetLight(x,     y,     z, 2) * 2 +
+            b = chunk_storage_->GetLight(x,     y,     z, 2) +
                 chunk_storage_->GetLight(x,     y - 1, z, 2) +
                 chunk_storage_->GetLight(x + 1, y,     z, 2) +
                 chunk_storage_->GetLight(x + 1, y - 1, z, 2);
 
-            s = chunk_storage_->GetLight(x,     y,     z, 3) * 2 +
+            s = chunk_storage_->GetLight(x,     y,     z, 3) +
                 chunk_storage_->GetLight(x,     y - 1, z, 3) +
                 chunk_storage_->GetLight(x + 1, y,     z, 3) +
                 chunk_storage_->GetLight(x + 1, y - 1, z, 3);
         }
     }
 
-    return ((static_cast<uint32_t>(r) << 21) | (static_cast<uint32_t>(g) << 14) | (static_cast<uint32_t>(b) << 7) | s);
+    return ((static_cast<uint32_t>(r) << 18) | (static_cast<uint32_t>(g) << 12) | (static_cast<uint32_t>(b) << 6) | s);
 }
 
-inline void Chunk::PushBack(uint64_t vertex) {
+inline void Chunk::PushBack(Vertex vertex) {
     vertex_data[vertex_data_size] = vertex;
     ++vertex_data_size;
 
     if (vertex_data_size == vertex_data_capacity) {
         vertex_data_capacity *= 2;
-        uint64_t* new_vertex_data = new uint64_t[vertex_data_capacity];
+        Vertex* new_vertex_data = new Vertex[vertex_data_capacity];
 
         if (new_vertex_data == nullptr) {
             std::cout << "Bad alloc: new_vertex_data" << std::endl;
@@ -763,124 +763,120 @@ void Chunk::GreedyMesh() {
                         is_processed[next_row] |= row_mask;
                     }
 
-                    //if (vertexAO[0] + vertexAO[2] < vertexAO[1] + vertexAO[3]) {
-                        
-                        if (direction == 0) {
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
-                                     ((plane + 1) << 20) | (bit << 15)       | (row << 10)       | (h << 5) | w);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
-                                     ((plane + 1) << 20) | ((bit + w) << 15) | (row << 10)       | (h << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
-                                     ((plane + 1) << 20) | ((bit + w) << 15) | ((row + h) << 10) | (0 << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
-                                     ((plane + 1) << 20) | (bit << 15)       | ((row + h) << 10) | (0 << 5) | w);
-                        } else if (direction == 1) {
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
-                                     (plane << 20) | (bit << 15)       | ((row + h) << 10) | (h << 5) | w);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
-                                     (plane << 20) | ((bit + w) << 15) | ((row + h) << 10) | (h << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
-                                     (plane << 20) | ((bit + w) << 15) | (row << 10)       | (0 << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
-                                     (plane << 20) | (bit << 15)       | (row << 10)       | (0 << 5) | w);
-                        } else if (direction == 2) {
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
-                                     (row << 20)       | ((plane + 1) << 15) | (bit << 10)       | (0 << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
-                                     (row << 20)       | ((plane + 1) << 15) | ((bit + w) << 10) | (0 << 5) | w);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
-                                     ((row + h) << 20) | ((plane + 1) << 15) | ((bit + w) << 10) | (h << 5) | w);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
-                                     ((row + h) << 20) | ((plane + 1) << 15) | (bit << 10)       | (h << 5) | 0);
-                        } else if (direction == 3) {
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
-                                     ((row + h) << 20) | (plane << 15) | (bit << 10)       | (h << 5) | w);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
-                                     ((row + h) << 20) | (plane << 15) | ((bit + w) << 10) | (h << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
-                                     (row << 20)       | (plane << 15) | ((bit + w) << 10) | (0 << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
-                                     (row << 20)       | (plane << 15) | (bit << 10)       | (0 << 5) | w);
-                        } else if (direction == 4) {
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
-                                     (bit << 20)       | ((row + h) << 15) | ((plane + 1) << 10) | (0 << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
-                                     (bit << 20)       | (row << 15)       | ((plane + 1) << 10) | (0 << 5) | h);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
-                                     ((bit + w) << 20) | (row << 15)       | ((plane + 1) << 10) | (w << 5) | h);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
-                                     ((bit + w) << 20) | ((row + h) << 15) | ((plane + 1) << 10) | (w << 5) | 0);
-                        } else { // if (direction == 5)
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
-                                     (bit << 20)       | (row << 15)       | (plane << 10) | (w << 5) | h);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
-                                     (bit << 20)       | ((row + h) << 15) | (plane << 10) | (w << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
-                                     ((bit + w) << 20) | ((row + h) << 15) | (plane << 10) | (0 << 5) | 0);
-                            PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
-                                     ((bit + w) << 20) | (row << 15)       | (plane << 10) | (0 << 5) | h);
-                        }
-                        
-                    //}
-                    /*else {
-                        
-                        if (direction == 0) {
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                                     ((plane + 1) << 24) | (bit << 18)       | ((row + h) << 12) | (0 << 6) | w);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
-                                     ((plane + 1) << 24) | (bit << 18)       | (row << 12)       | (h << 6) | w);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                                     ((plane + 1) << 24) | ((bit + w) << 18) | (row << 12)       | (h << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
-                                     ((plane + 1) << 24) | ((bit + w) << 18) | ((row + h) << 12) | (0 << 6) | 0);
-                        } else if (direction == 1) {
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                                     (plane << 24) | (bit << 18)       | (row << 12)       | (0 << 6) | w);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
-                                     (plane << 24) | (bit << 18)       | ((row + h) << 12) | (h << 6) | w);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                                     (plane << 24) | ((bit + w) << 18) | ((row + h) << 12) | (h << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
-                                     (plane << 24) | ((bit + w) << 18) | (row << 12)       | (0 << 6) | 0);
-                        } else if (direction == 2) {
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                                     ((row + h) << 24) | ((plane + 1) << 18) | (bit << 12)       | (h << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
-                                     (row << 24)       | ((plane + 1) << 18) | (bit << 12)       | (0 << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                                     (row << 24)       | ((plane + 1) << 18) | ((bit + w) << 12) | (0 << 6) | w);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
-                                     ((row + h) << 24) | ((plane + 1) << 18) | ((bit + w) << 12) | (h << 6) | w);
-                        } else if (direction == 3) {
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                                     (row << 24)       | (plane << 18) | (bit << 12)       | (0 << 6) | w);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
-                                     ((row + h) << 24) | (plane << 18) | (bit << 12)       | (h << 6) | w);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                                     ((row + h) << 24) | (plane << 18) | ((bit + w) << 12) | (h << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
-                                     (row << 24)       | (plane << 18) | ((bit + w) << 12) | (0 << 6) | 0);
-                        } else if (direction == 4) {
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                                     ((bit + w) << 24) | ((row + h) << 18) | ((plane + 1) << 12) | (w << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
-                                     (bit << 24)       | ((row + h) << 18) | ((plane + 1) << 12) | (0 << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                                     (bit << 24)       | (row << 18)       | ((plane + 1) << 12) | (0 << 6) | h);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
-                                     ((bit + w) << 24) | (row << 18)       | ((plane + 1) << 12) | (w << 6) | h);
-                        } else { // if (direction == 5)
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[1] << 30) |
-                                     ((bit + w) << 24) | (row << 18)       | (plane << 12) | (0 << 6) | h);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[2] << 30) |
-                                     (bit << 24)       | (row << 18)       | (plane << 12) | (w << 6) | h);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[3] << 30) |
-                                     (bit << 24)       | ((row + h) << 18) | (plane << 12) | (w << 6) | 0);
-                            PushBack(((current_type & 0x0000000000FFFFFF) << 32) | (vertexAO[0] << 30) |
-                                     ((bit + w) << 24) | ((row + h) << 18) | (plane << 12) | (0 << 6) | 0);
-                        }
-                        
-                    }*/
+                    if (direction == 0) {
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((plane + 1) << 20) | (bit << 15)       | (row << 10)       | (h << 5) | w});
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((plane + 1) << 20) | ((bit + w) << 15) | (row << 10)       | (h << 5) | 0});
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((plane + 1) << 20) | ((bit + w) << 15) | ((row + h) << 10) | (0 << 5) | 0});
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((plane + 1) << 20) | (bit << 15)       | ((row + h) << 10) | (0 << 5) | w});
+
+
+                        /*PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
+                                    ((plane + 1) << 20) | (bit << 15)       | (row << 10)       | (h << 5) | w);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
+                                    ((plane + 1) << 20) | ((bit + w) << 15) | (row << 10)       | (h << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
+                                    ((plane + 1) << 20) | ((bit + w) << 15) | ((row + h) << 10) | (0 << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
+                                    ((plane + 1) << 20) | (bit << 15)       | ((row + h) << 10) | (0 << 5) | w);*/
+                    } else if (direction == 1) {
+                        PushBack({l3, l2, l1, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (plane << 20) | (bit << 15)       | ((row + h) << 10) | (h << 5) | w});
+                        PushBack({l3, l2, l1, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (plane << 20) | ((bit + w) << 15) | ((row + h) << 10) | (h << 5) | 0});
+                        PushBack({l3, l2, l1, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (plane << 20) | ((bit + w) << 15) | (row << 10)       | (0 << 5) | 0});
+                        PushBack({l3, l2, l1, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (plane << 20) | (bit << 15)       | (row << 10)       | (0 << 5) | w});
+
+
+                        /*PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
+                                    (plane << 20) | (bit << 15)       | ((row + h) << 10) | (h << 5) | w);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
+                                    (plane << 20) | ((bit + w) << 15) | ((row + h) << 10) | (h << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
+                                    (plane << 20) | ((bit + w) << 15) | (row << 10)       | (0 << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
+                                    (plane << 20) | (bit << 15)       | (row << 10)       | (0 << 5) | w);*/
+                    } else if (direction == 2) {
+                        PushBack({l0, l3, l2, l1, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (row << 20)       | ((plane + 1) << 15) | (bit << 10)       | (0 << 5) | 0});
+                        PushBack({l0, l3, l2, l1, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (row << 20)       | ((plane + 1) << 15) | ((bit + w) << 10) | (0 << 5) | w});
+                        PushBack({l0, l3, l2, l1, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((row + h) << 20) | ((plane + 1) << 15) | ((bit + w) << 10) | (h << 5) | w});
+                        PushBack({l0, l3, l2, l1, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((row + h) << 20) | ((plane + 1) << 15) | (bit << 10)       | (h << 5) | 0});
+
+                        /*PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
+                                    (row << 20)       | ((plane + 1) << 15) | (bit << 10)       | (0 << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
+                                    (row << 20)       | ((plane + 1) << 15) | ((bit + w) << 10) | (0 << 5) | w);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
+                                    ((row + h) << 20) | ((plane + 1) << 15) | ((bit + w) << 10) | (h << 5) | w);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
+                                    ((row + h) << 20) | ((plane + 1) << 15) | (bit << 10)       | (h << 5) | 0);*/
+                    } else if (direction == 3) {
+                        PushBack({l1, l2, l3, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((row + h) << 20) | (plane << 15) | (bit << 10)       | (h << 5) | w});
+                        PushBack({l1, l2, l3, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((row + h) << 20) | (plane << 15) | ((bit + w) << 10) | (h << 5) | 0});
+                        PushBack({l1, l2, l3, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (row << 20)       | (plane << 15) | ((bit + w) << 10) | (0 << 5) | 0});
+                        PushBack({l1, l2, l3, l0, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (row << 20)       | (plane << 15) | (bit << 10)       | (0 << 5) | w});
+
+
+                        /*PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
+                                    ((row + h) << 20) | (plane << 15) | (bit << 10)       | (h << 5) | w);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
+                                    ((row + h) << 20) | (plane << 15) | ((bit + w) << 10) | (h << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
+                                    (row << 20)       | (plane << 15) | ((bit + w) << 10) | (0 << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
+                                    (row << 20)       | (plane << 15) | (bit << 10)       | (0 << 5) | w);*/
+                    } else if (direction == 4) {
+                        PushBack({l1, l0, l3, l2, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (bit << 20)       | ((row + h) << 15) | ((plane + 1) << 10) | (0 << 5) | 0});
+                        PushBack({l1, l0, l3, l2, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (bit << 20)       | (row << 15)       | ((plane + 1) << 10) | (0 << 5) | h});
+                        PushBack({l1, l0, l3, l2, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((bit + w) << 20) | (row << 15)       | ((plane + 1) << 10) | (w << 5) | h});
+                        PushBack({l1, l0, l3, l2, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((bit + w) << 20) | ((row + h) << 15) | ((plane + 1) << 10) | (w << 5) | 0});
+
+
+                        /*PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
+                                    (bit << 20)       | ((row + h) << 15) | ((plane + 1) << 10) | (0 << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
+                                    (bit << 20)       | (row << 15)       | ((plane + 1) << 10) | (0 << 5) | h);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
+                                    ((bit + w) << 20) | (row << 15)       | ((plane + 1) << 10) | (w << 5) | h);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
+                                    ((bit + w) << 20) | ((row + h) << 15) | ((plane + 1) << 10) | (w << 5) | 0);*/
+                    } else { // if (direction == 5)
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (bit << 20)       | (row << 15)       | (plane << 10) | (w << 5) | h});
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    (bit << 20)       | ((row + h) << 15) | (plane << 10) | (w << 5) | 0});
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((bit + w) << 20) | ((row + h) << 15) | (plane << 10) | (0 << 5) | 0});
+                        PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) |
+                                    ((bit + w) << 20) | (row << 15)       | (plane << 10) | (0 << 5) | h});
+
+
+                        /*PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l0) << 25) |
+                                    (bit << 20)       | (row << 15)       | (plane << 10) | (w << 5) | h);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l1) << 25) |
+                                    (bit << 20)       | ((row + h) << 15) | (plane << 10) | (w << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l2) << 25) |
+                                    ((bit + w) << 20) | ((row + h) << 15) | (plane << 10) | (0 << 5) | 0);
+                        PushBack((static_cast<uint64_t>(texture_id) << 53) | (static_cast<uint64_t>(l3) << 25) |
+                                    ((bit + w) << 20) | (row << 15)       | (plane << 10) | (0 << 5) | h);*/
+                    }
 
                     bit += w;
                 }

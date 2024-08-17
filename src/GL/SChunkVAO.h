@@ -1,10 +1,9 @@
 #pragma once
 
-#include <vector>
-#include <stdint.h>
-
 #include <GL/glew.h>
 #include <GL/GL.h>
+
+#include "../Chunks/Chunk.h"
 
 namespace GL {
     class SChunkVAO {
@@ -23,6 +22,6 @@ namespace GL {
         static void Unbind();
 
         void AllocateVBO(size_t vertex_data_size);
-        void FillVBOSection(const uint64_t* vertex_data, int vertex_data_size, int offset);
+        void FillVBOSection(const Vertex* vertex_data, int vertex_data_size, int offset);
     };
 }  // namespace GL

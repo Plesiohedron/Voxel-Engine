@@ -17,9 +17,9 @@ void LightProcessor::Add(int x, int y, int z, uint8_t emission) {
 
     chunk->is_modified = true;
     chunk->lightmap_->Set(x - chunk->global_coordinates.x * Chunk::WIDTH,
-                         y - chunk->global_coordinates.y * Chunk::HEIGHT,
-                         z - chunk->global_coordinates.z * Chunk::DEPTH,
-                         channel_, emission);
+                          y - chunk->global_coordinates.y * Chunk::HEIGHT,
+                          z - chunk->global_coordinates.z * Chunk::DEPTH,
+                          channel_, emission);
 }
 
 void LightProcessor::Add(int x, int y, int z) {
@@ -33,9 +33,9 @@ void LightProcessor::Remove(int x, int y, int z) {
     }
 
     uint8_t emission = chunk->lightmap_->Get(x - chunk->global_coordinates.x * Chunk::WIDTH,
-                                            y - chunk->global_coordinates.y * Chunk::HEIGHT,
-                                            z - chunk->global_coordinates.z * Chunk::DEPTH,
-                                            channel_);
+                                             y - chunk->global_coordinates.y * Chunk::HEIGHT,
+                                             z - chunk->global_coordinates.z * Chunk::DEPTH,
+                                             channel_);
     if (emission == 0) {
         return;
     }
@@ -43,9 +43,9 @@ void LightProcessor::Remove(int x, int y, int z) {
     remove_queue_.push({x, y, z, emission});
 
     chunk->lightmap_->Set(x - chunk->global_coordinates.x * Chunk::WIDTH,
-                         y - chunk->global_coordinates.y * Chunk::HEIGHT,
-                         z - chunk->global_coordinates.z * Chunk::DEPTH,
-                         channel_, 0);
+                          y - chunk->global_coordinates.y * Chunk::HEIGHT,
+                          z - chunk->global_coordinates.z * Chunk::DEPTH,
+                          channel_, 0);
 }
 
 void LightProcessor::Process() {
@@ -71,9 +71,9 @@ void LightProcessor::Process() {
                     remove_queue_.push({x, y, z, emission});
                     chunk->is_modified = true;
                     chunk->lightmap_->Set(x - chunk->global_coordinates.x * Chunk::WIDTH,
-                                         y - chunk->global_coordinates.y * Chunk::HEIGHT,
-                                         z - chunk->global_coordinates.z * Chunk::DEPTH,
-                                         channel_, 0);
+                                          y - chunk->global_coordinates.y * Chunk::HEIGHT,
+                                          z - chunk->global_coordinates.z * Chunk::DEPTH,
+                                          channel_, 0);
                 } else if (emission >= entry.emission) {
                     add_queue_.push({x, y, z, emission});
                 }
@@ -99,9 +99,9 @@ void LightProcessor::Process() {
                 Voxel* voxel = chunk_storage_->GetVoxel(x, y, z);
                 if (voxel->id == 0 && emission + 2 <= entry.emission) {
                     chunk->lightmap_->Set(x - chunk->global_coordinates.x * Chunk::WIDTH,
-                                         y - chunk->global_coordinates.y * Chunk::HEIGHT,
-                                         z - chunk->global_coordinates.z * Chunk::DEPTH,
-                                         channel_, entry.emission - 1);
+                                          y - chunk->global_coordinates.y * Chunk::HEIGHT,
+                                          z - chunk->global_coordinates.z * Chunk::DEPTH,
+                                          channel_, entry.emission - 1);
                     chunk->is_modified = true;
                     add_queue_.push({x, y, z, static_cast<uint8_t>(entry.emission - 1)});
                 }

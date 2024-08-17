@@ -10,7 +10,7 @@ LineBatch::LineBatch() {
         colors_.push_back({0.f, 0.f, 0.f, 0.5f});
     }
 
-    shader_ = std::make_unique<GL::Program>("Lines");
+    shader_ = std::make_unique<GL::Program>("Lines", false);
     VAO_ = std::make_unique<GL::VAO>();
 
     shader_->BindAttribute(0, "position");

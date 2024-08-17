@@ -1,7 +1,7 @@
 #include "Crosshair.h"
 
 Crosshair::Crosshair() : model_(1.0f) {
-    shader_ = std::make_unique<GL::Program>("Crosshair");
+    shader_ = std::make_unique<GL::Program>("Crosshair", false);
     VAO_ = std::make_unique<GL::VAO>();
 
     texture_ = std::make_unique<GL::Texture2D>();

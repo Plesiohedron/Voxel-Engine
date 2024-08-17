@@ -2,11 +2,15 @@
 
 #include <fstream>
 
-GL::Program::Program(const std::string& name) {
+GL::Program::Program(const std::string& name, bool geometry_shader_option) : geometry_shader_option_{geometry_shader_option} {
     program_ = glCreateProgram();
 
     vertex_shader_ = LoadShader(("res/glsl/" + name + ".vert").c_str(), GL_VERTEX_SHADER);
     fragment_shader_ = LoadShader(("res/glsl/" + name + ".frag").c_str(), GL_FRAGMENT_SHADER);
+
+    //if (geometry_shader_option_) {
+    //    geometry_shader_ = LoadShader()
+    //}
 }
 
 GL::Program::~Program() {
@@ -40,7 +44,7 @@ void GL::Program::Use() const {
     glUseProgram(program_);
 }
 
-void GL::Program::Unuse() const {
+void GL::Program::Unuse() {
     glUseProgram(0);
 }
 
@@ -52,19 +56,19 @@ GLint GL::Program::GetUniformLocation(const char* name) const {
     return glGetUniformLocation(program_, name);
 }
 
-void GL::Program::UniformInt(const GLint location, const int value) const {
+void GL::Program::UniformInt(GLint location, int value) const {
     glUniform1i(location, value);
 }
 
-void GL::Program::UniformMatrix(const GLint location, const glm::mat4 matrix) const {
+void GL::Program::UniformMatrix(GLint location, const glm::mat4& matrix) const {
     glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
-void GL::Program::UniformTexture(const GLint location, const GLint number) const {
+void GL::Program::UniformTexture(GLint location, GLint number) const {
     glUniform1i(location, number);
 }
 
-GLuint GL::Program::LoadShader(const char* path, const GLenum shader_type) const {
+GLuint GL::Program::LoadShader(const char* path, GLenum shader_type) const {
     GLuint shader = glCreateShader(shader_type);
 
     std::ifstream fin(path);

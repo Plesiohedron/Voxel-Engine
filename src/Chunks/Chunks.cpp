@@ -40,9 +40,9 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
         unified_index_data[i] = j + 0;
         unified_index_data[i + 1] = j + 1;
         unified_index_data[i + 2] = j + 2;
-        unified_index_data[i + 3] = j + 2;
-        unified_index_data[i + 4] = j + 3;
-        unified_index_data[i + 5] = j + 0;
+        unified_index_data[i + 3] = j + 3;
+        unified_index_data[i + 4] = j + 0;
+        unified_index_data[i + 5] = j + 2;
     }
 
     glGenBuffers(1, &unified_EBO_);
@@ -71,7 +71,7 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
     matrices_SSBO_.InitializeMatrices(models_, storage_.chunk_count, 0);
 
 
-    shader_ = std::make_unique<GL::Program>("Chunks");
+    shader_ = std::make_unique<GL::Program>("Chunks", true);
     shader_->BindAttribute(0, "color");
     shader_->BindAttribute(1, "UV");
     shader_->BindAttribute(2, "position");
@@ -89,7 +89,7 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
     glActiveTexture(GL_TEXTURE0);
     texture_atlas_->Bind();
     shader_->UniformTexture(uniform_texture_loc_, 0);
-    shader_->Unuse();
+    GL::Program::Unuse();
 }
 
 void Chunks::PollUpdates() {
@@ -139,9 +139,11 @@ void Chunks::PollUpdates() {
 
                     glGenBuffers(1, &temp_VBO);
                     glBindBuffer(GL_ARRAY_BUFFER, temp_VBO);
-                    glBufferData(GL_ARRAY_BUFFER, sizeof(uint64_t) * SChunkVAO_capacity, nullptr, GL_DYNAMIC_DRAW);
-                    glVertexAttribIPointer(0, 2, GL_UNSIGNED_INT, 0, nullptr);
+                    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * SChunkVAO_capacity, nullptr, GL_DYNAMIC_DRAW);
+                    glVertexAttribIPointer(0, 4, GL_UNSIGNED_INT, sizeof(Vertex), nullptr);
                     glEnableVertexAttribArray(0);
+                    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(Vertex), (GLvoid*)(4 * sizeof(uint32_t)));
+                    glEnableVertexAttribArray(1);
                     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                     int unmodified_SChunk_offset = 0;
@@ -151,7 +153,7 @@ void Chunks::PollUpdates() {
 
                         if (chunk->is_modified) {
                             glBindBuffer(GL_ARRAY_BUFFER, temp_VBO);
-                            glBufferSubData(GL_ARRAY_BUFFER, sizeof(uint64_t) * modified_SChunk_offset, sizeof(uint64_t) * chunk->vertex_data_size,
+                            glBufferSubData(GL_ARRAY_BUFFER, sizeof(Vertex) * modified_SChunk_offset, sizeof(Vertex) * chunk->vertex_data_size,
                                             chunk->vertex_data);
                             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -167,9 +169,9 @@ void Chunks::PollUpdates() {
                             glBindBuffer(GL_COPY_READ_BUFFER, VAOs_[i]->VBO);
                             glBindBuffer(GL_COPY_WRITE_BUFFER, temp_VBO);
 
-                            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, sizeof(uint64_t) * unmodified_SChunk_offset,
-                                                sizeof(uint64_t) * modified_SChunk_offset,
-                                                sizeof(uint64_t) * chunk->voxel_faces_size * Chunk::VERTICES_COUNT_PER_SQUARE);
+                            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, sizeof(Vertex) * unmodified_SChunk_offset,
+                                                sizeof(Vertex) * modified_SChunk_offset,
+                                                sizeof(Vertex) * chunk->voxel_faces_size * Chunk::VERTICES_COUNT_PER_SQUARE);
 
                             glBindBuffer(GL_COPY_READ_BUFFER, 0);
                             glBindBuffer(GL_COPY_WRITE_BUFFER, 0);

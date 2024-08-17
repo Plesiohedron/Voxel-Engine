@@ -10,18 +10,18 @@
 namespace GL {
     class Program {
     public:
-        Program(const std::string& name);
+        Program(const std::string& name, bool geometry_shader_option);
         ~Program();
 
         void Link() const;
         void Use() const;
-        void Unuse() const;
+        static void Unuse();
 
-        void BindAttribute(const GLuint index, const char* name) const;
+        void BindAttribute(GLuint index, const char* name) const;
         GLint GetUniformLocation(const char* name) const;
-        void UniformInt(const GLint location, const int value) const;
-        void UniformMatrix(const GLint uniform, const glm::mat4 matrix) const;
-        void UniformTexture(const GLint location, const GLint number) const;
+        void UniformInt(GLint location, int value) const;
+        void UniformMatrix(GLint uniform, const glm::mat4& matrix) const;
+        void UniformTexture(GLint location, GLint number) const;
 
     private:
         GLuint LoadShader(const char* path, const GLenum shader_type) const;
@@ -30,6 +30,9 @@ namespace GL {
         GLuint program_;
         GLuint vertex_shader_;
         GLuint fragment_shader_;
+
+        bool geometry_shader_option_;
+        GLuint geometry_shader_;
 
         static const int INFO_LOG_LENGTH_ = 512;
     };
