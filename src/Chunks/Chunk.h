@@ -45,7 +45,8 @@ public:
     int vertex_data_capacity = STARTING_VOXEL_FACES_CAPACITY * VERTICES_COUNT_PER_SQUARE;
     Vertex* vertex_data;
 
-    bool is_modified;
+    bool is_modified = true;
+    bool is_visible = false;
 
 private:
     Voxel* voxels_;
@@ -60,9 +61,10 @@ private:
                  uint16_t (&Z_rows)[Chunk::WIDTH][Chunk::HEIGHT]);
     void CullingChunksJoints();
 
-    inline bool IsBlocked(int x, int y, int z) const;
-    inline uint32_t Light(int x, int y, int z, int direction, int vertex) const;
-    inline void PushBack(Vertex vertex);
+    bool IsBlocked(int x, int y, int z) const;
+    uint8_t GetLight(int x, int y, int z, int channel) const;
+    uint32_t Light(int x, int y, int z, int direction, int vertex) const;
+    void PushBack(Vertex vertex);
 
     void GreedyMesh();
 

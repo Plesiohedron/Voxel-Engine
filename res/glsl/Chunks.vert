@@ -9,7 +9,6 @@ layout (std430, binding = 0) buffer Matrices {
 
 out vec2 frag_coordinates;
 out vec3 frag_UV;
-//out vec4 frag_color;
 
 flat out vec3 color0;
 flat out vec3 color1;

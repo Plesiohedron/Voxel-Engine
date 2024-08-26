@@ -51,6 +51,22 @@ ChunkStorage::ChunkStorage(const glm::ivec3& sizes) : sizes(sizes) {
         }
     }
 
+    for (int global_z = (rendering_center.z - sizes.z / 2) * Chunk::DEPTH; global_z < (rendering_center.z + (sizes.z + 1) / 2) * Chunk::DEPTH; ++global_z) {
+        for (int global_x = (rendering_center.x - sizes.x / 2) * Chunk::WIDTH; global_x < (rendering_center.x + (sizes.x + 1) / 2) * Chunk::WIDTH; ++global_x) {
+            for (int global_y = 0; global_y < sizes.y * Chunk::HEIGHT; ++global_y) {
+                Voxel* voxel = GetVoxel(global_x, global_y, global_z);
+
+                if (voxel->id == 1) {
+                    if (global_y == sizes.y * Chunk::HEIGHT - 1) {
+                        voxel->id = 2;
+                    } else if (GetVoxel(global_x, global_y + 1, global_z)->id == 0) {
+                        voxel->id = 2;
+                    }
+                }
+            }
+        }
+    }
+
     for (int i = 0; i < chunk_count; ++i) {
         chunks_[i]->CullingChunksJoints();
     }
@@ -127,9 +143,9 @@ ChunkStorage::ChunkStorage(const glm::ivec3& sizes) : sizes(sizes) {
                 Chunk* chunk = GetChunkByVoxel(global_x, global_y, global_z);
 
                 chunk->lightmap_->SetS(global_x - chunk->global_coordinates.x * Chunk::WIDTH,
-                                      global_y - chunk->global_coordinates.y * Chunk::HEIGHT,
-                                      global_z - chunk->global_coordinates.z * Chunk::DEPTH,
-                                      0xF);
+                                       global_y - chunk->global_coordinates.y * Chunk::HEIGHT,
+                                       global_z - chunk->global_coordinates.z * Chunk::DEPTH,
+                                       0xF);
             }
         }
     }
@@ -155,9 +171,9 @@ ChunkStorage::ChunkStorage(const glm::ivec3& sizes) : sizes(sizes) {
                 Chunk* chunk = GetChunkByVoxel(global_x, global_y, global_z);
 
                 chunk->lightmap_->SetS(global_x - chunk->global_coordinates.x * Chunk::WIDTH,
-                                      global_y - chunk->global_coordinates.y * Chunk::HEIGHT,
-                                      global_z - chunk->global_coordinates.z * Chunk::DEPTH,
-                                      0xF);
+                                       global_y - chunk->global_coordinates.y * Chunk::HEIGHT,
+                                       global_z - chunk->global_coordinates.z * Chunk::DEPTH,
+                                       0xF);
             }
         }
     }
@@ -166,11 +182,6 @@ ChunkStorage::ChunkStorage(const glm::ivec3& sizes) : sizes(sizes) {
     G->Process();
     B->Process();
     S->Process();
-
-    std::cout << static_cast<int>(GetLight(8, 100, 8, 0)) << ' ' << static_cast<int>(GetLight(8, 100, 8, 1)) << ' ' << static_cast<int>(GetLight(8, 100, 8, 2)) << ' ' << static_cast<int>(GetLight(8, 100, 8, 3)) << '\n';
-    std::cout << static_cast<int>(GetLight(16, 16, 16, 0)) << ' ' << static_cast<int>(GetLight(16, 16, 16, 1)) << ' ' << static_cast<int>(GetLight(16, 16, 16, 2)) << ' ' << static_cast<int>(GetLight(16, 16, 16, 3)) << '\n';
-    std::cout << static_cast<int>(GetLight(16, 3, 16, 0)) << ' ' << static_cast<int>(GetLight(16, 3, 16, 1)) << ' ' << static_cast<int>(GetLight(16, 3, 16, 2)) << ' ' << static_cast<int>(GetLight(16, 3, 16, 3)) << '\n';
-
 }
 
 ChunkStorage::~ChunkStorage() {
@@ -629,8 +640,8 @@ Chunk* ChunkStorage::GetChunkByVoxel(int x, int y, int z) const {
     chunk_local_x += -rendering_center.x + sizes.x / 2; // local
     chunk_local_z += -rendering_center.z + sizes.z / 2; // local
 
-    if (chunk_local_x < 0 || chunk_local_y < 0 || chunk_local_z < 0 || chunk_local_x >= sizes.x || chunk_local_y >= sizes.y ||
-        chunk_local_z >= sizes.z) {
+    if (chunk_local_x < 0 || chunk_local_y < 0 || chunk_local_z < 0 ||
+        chunk_local_x >= sizes.x || chunk_local_y >= sizes.y || chunk_local_z >= sizes.z) {
         return nullptr;
     }
 
@@ -638,14 +649,14 @@ Chunk* ChunkStorage::GetChunkByVoxel(int x, int y, int z) const {
     return chunks_[(chunk_local_y * sizes.z + chunk_local_z) * sizes.x + chunk_local_x];
 }
 
-Voxel* ChunkStorage::RayCast(const glm::vec3& a, const glm::vec3& dir, float max_ray_length, glm::vec3& end, glm::ivec3& normal, glm::ivec3& iend) const {
-    float px = a.x;
-    float py = a.y;
-    float pz = a.z;
+Voxel* ChunkStorage::RayCast(const glm::vec3& position, const glm::vec3& direction, float& ray_length, glm::vec3& end, glm::ivec3& normal, glm::vec3& iend) const {
+    float px = position.x;
+    float py = position.y;
+    float pz = position.z;
 
-    float dx = dir.x;
-    float dy = dir.y;
-    float dz = dir.z;
+    float dx = direction.x;
+    float dy = direction.y;
+    float dz = direction.z;
 
     float t = 0.0f;
     int ix = floor(px);
@@ -672,26 +683,32 @@ Voxel* ChunkStorage::RayCast(const glm::vec3& a, const glm::vec3& dir, float max
 
     int stepped_index = -1;
 
-    while (t <= max_ray_length) {
+    while (t <= ray_length) {
         Voxel* voxel = GetVoxel(ix, iy, iz);
+
         if (voxel == nullptr || voxel->id) {
             end.x = px + t * dx;
             end.y = py + t * dy;
             end.z = pz + t * dz;
 
-            iend.x = ix;
-            iend.y = iy;
-            iend.z = iz;
+            iend.x = static_cast<float>(ix);
+            iend.y = static_cast<float>(iy);
+            iend.z = static_cast<float>(iz);
 
             normal.x = normal.y = normal.z = 0;
-            if (stepped_index == 0)
+            if (stepped_index == 0) {
                 normal.x = -stepx;
-            if (stepped_index == 1)
+            } else if (stepped_index == 1) {
                 normal.y = -stepy;
-            if (stepped_index == 2)
+            } else if (stepped_index == 2) {
                 normal.z = -stepz;
+            }
+
+            ray_length -= t;
+
             return voxel;
         }
+
         if (txMax < tyMax) {
             if (txMax < tzMax) {
                 ix += stepx;
@@ -718,44 +735,93 @@ Voxel* ChunkStorage::RayCast(const glm::vec3& a, const glm::vec3& dir, float max
             }
         }
     }
-    iend.x = ix;
-    iend.y = iy;
-    iend.z = iz;
 
-    end.x = px + t * dx;
-    end.y = py + t * dy;
-    end.z = pz + t * dz;
-    normal.x = normal.y = normal.z = 0;
     return nullptr;
+}
+
+void ChunkStorage::FrustumRayCast(const glm::vec3& position, const glm::vec3& direction, float ray_length) const {
+    float px = position.x / Chunk::WIDTH - rendering_center.x + (sizes.x / 2);
+    float py = position.y / Chunk::HEIGHT;
+    float pz = position.z / Chunk::DEPTH - rendering_center.z + (sizes.z / 2);
+
+    float dx = direction.x;
+    float dy = direction.y;
+    float dz = direction.z;
+
+    float t = 0.0;
+    int ix = floor(px);
+    int iy = floor(py);
+    int iz = floor(pz);
+
+    int stepx = (dx > 0.0) ? 1 : -1;
+    int stepy = (dy > 0.0) ? 1 : -1;
+    int stepz = (dz > 0.0) ? 1 : -1;
+
+    float infinity = std::numeric_limits<float>::infinity();
+
+    float txDelta = (dx == 0.0) ? infinity : abs(1.0 / dx);
+    float tyDelta = (dy == 0.0) ? infinity : abs(1.0 / dy);
+    float tzDelta = (dz == 0.0) ? infinity : abs(1.0 / dz);
+
+    float xdist = (stepx > 0) ? (ix + 1 - px) : (px - ix);
+    float ydist = (stepy > 0) ? (iy + 1 - py) : (py - iy);
+    float zdist = (stepz > 0) ? (iz + 1 - pz) : (pz - iz);
+
+    float txMax = (txDelta < infinity) ? txDelta * xdist : infinity;
+    float tyMax = (tyDelta < infinity) ? tyDelta * ydist : infinity;
+    float tzMax = (tzDelta < infinity) ? tzDelta * zdist : infinity;
+
+    while (t <= ray_length) {
+        if (ix < 0 || iy < 0 || iz < 0 || ix >= sizes.x || iy >= sizes.y || iz >= sizes.z) {
+            return;
+        }
+
+        chunks_[(iy * sizes.z + iz) * sizes.x + ix]->is_visible = true;
+        //std::cout << ix << ' ' << iy << ' ' << iz << '\n';
+
+        if (txMax < tyMax) {
+            if (txMax < tzMax) {
+                ix += stepx;
+                t = txMax;
+                txMax += txDelta;
+            } else {
+                iz += stepz;
+                t = tzMax;
+                tzMax += tzDelta;
+            }
+        } else {
+            if (tyMax < tzMax) {
+                iy += stepy;
+                t = tyMax;
+                tyMax += tyDelta;
+            } else {
+                iz += stepz;
+                t = tzMax;
+                tzMax += tzDelta;
+            }
+        }
+    }
 }
 
 void ChunkStorage::CaptureTarget(LineBatch& line_batch, const Camera& camera) {
     glm::vec3 end;
     glm::ivec3 normal;
-    glm::ivec3 iend;
-    Voxel* voxel = RayCast(camera.position, camera.vector_front, 5.0f, end, normal, iend);
+    glm::vec3 iend;
+
+    float ray_length = 5.0f;
+
+    Voxel* voxel = RayCast(camera.position, camera.vector_front, ray_length, end, normal, iend);
     if (voxel != nullptr) {
-        line_batch.positions_[0] = {static_cast<float>(iend.x) - 0.001f, static_cast<float>(iend.y) - 0.001f, static_cast<float>(iend.z) - 0.001f};
-        line_batch.positions_[1] = {static_cast<float>(iend.x) - 0.001f, static_cast<float>(iend.y) + 1.001f, static_cast<float>(iend.z) - 0.001f};
-        line_batch.positions_[2] = {static_cast<float>(iend.x) - 0.001f, static_cast<float>(iend.y) + 1.001f, static_cast<float>(iend.z) + 1.001f};
-        line_batch.positions_[3] = {static_cast<float>(iend.x) - 0.001f, static_cast<float>(iend.y) - 0.001f, static_cast<float>(iend.z) + 1.001f};
-        line_batch.positions_[4] = {static_cast<float>(iend.x) + 1.001f, static_cast<float>(iend.y) - 0.001f, static_cast<float>(iend.z) - 0.001f};
-        line_batch.positions_[5] = {static_cast<float>(iend.x) + 1.001f, static_cast<float>(iend.y) + 1.001f, static_cast<float>(iend.z) - 0.001f};
-        line_batch.positions_[6] = {static_cast<float>(iend.x) + 1.001f, static_cast<float>(iend.y) + 1.001f, static_cast<float>(iend.z) + 1.001f};
-        line_batch.positions_[7] = {static_cast<float>(iend.x) + 1.001f, static_cast<float>(iend.y) - 0.001f, static_cast<float>(iend.z) + 1.001f};
-
-        line_batch.RewritePositionData();
-
-        line_batch.draw_box = true;
-
         int x;
         int y;
         int z;
 
         if (Events::MouseIsClicked(GLFW_MOUSE_BUTTON_1)) {
-            x = iend.x;
-            y = iend.y;
-            z = iend.z;
+            //auto start = std::chrono::high_resolution_clock::now();
+
+            x = static_cast<int>(iend.x);
+            y = static_cast<int>(iend.y);
+            z = static_cast<int>(iend.z);
 
             SetVoxel(x, y, z, 0);
 
@@ -788,10 +854,35 @@ void ChunkStorage::CaptureTarget(LineBatch& line_batch, const Camera& camera) {
             B->Process();
             S->Process();
 
+
+            voxel = RayCast(camera.position, camera.vector_front, ray_length, end, normal, iend);
+
+            if (voxel != nullptr) {
+                line_batch.positions_[0] = {iend.x - 0.001f, iend.y - 0.001f, iend.z - 0.001f};
+                line_batch.positions_[1] = {iend.x - 0.001f, iend.y + 1.001f, iend.z - 0.001f};
+                line_batch.positions_[2] = {iend.x - 0.001f, iend.y + 1.001f, iend.z + 1.001f};
+                line_batch.positions_[3] = {iend.x - 0.001f, iend.y - 0.001f, iend.z + 1.001f};
+                line_batch.positions_[4] = {iend.x + 1.001f, iend.y - 0.001f, iend.z - 0.001f};
+                line_batch.positions_[5] = {iend.x + 1.001f, iend.y + 1.001f, iend.z - 0.001f};
+                line_batch.positions_[6] = {iend.x + 1.001f, iend.y + 1.001f, iend.z + 1.001f};
+                line_batch.positions_[7] = {iend.x + 1.001f, iend.y - 0.001f, iend.z + 1.001f};
+                line_batch.RewritePositionData();
+
+                line_batch.draw_box = true;
+            } else {
+                line_batch.draw_box = false;
+            }
+
+            //auto stop = std::chrono::high_resolution_clock::now();
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+            //std::cout << "Time taken by Lighting: " << duration.count() << " microseconds\n";
+
         } else if (Events::MouseIsClicked(GLFW_MOUSE_BUTTON_2)) {
-            x = iend.x + normal.x;
-            y = iend.y + normal.y;
-            z = iend.z + normal.z;
+            //auto start = std::chrono::high_resolution_clock::now();
+
+            x = static_cast<int>(iend.x) + normal.x;
+            y = static_cast<int>(iend.y) + normal.y;
+            z = static_cast<int>(iend.z) + normal.z;
 
             SetVoxel(x, y, z, selected_block);
 
@@ -820,6 +911,35 @@ void ChunkStorage::CaptureTarget(LineBatch& line_batch, const Camera& camera) {
                 B->Process();
             }
 
+
+            line_batch.positions_[0] = {static_cast<float>(x) - 0.001f, static_cast<float>(y) - 0.001f, static_cast<float>(z) - 0.001f};
+            line_batch.positions_[1] = {static_cast<float>(x) - 0.001f, static_cast<float>(y) + 1.001f, static_cast<float>(z) - 0.001f};
+            line_batch.positions_[2] = {static_cast<float>(x) - 0.001f, static_cast<float>(y) + 1.001f, static_cast<float>(z) + 1.001f};
+            line_batch.positions_[3] = {static_cast<float>(x) - 0.001f, static_cast<float>(y) - 0.001f, static_cast<float>(z) + 1.001f};
+            line_batch.positions_[4] = {static_cast<float>(x) + 1.001f, static_cast<float>(y) - 0.001f, static_cast<float>(z) - 0.001f};
+            line_batch.positions_[5] = {static_cast<float>(x) + 1.001f, static_cast<float>(y) + 1.001f, static_cast<float>(z) - 0.001f};
+            line_batch.positions_[6] = {static_cast<float>(x) + 1.001f, static_cast<float>(y) + 1.001f, static_cast<float>(z) + 1.001f};
+            line_batch.positions_[7] = {static_cast<float>(x) + 1.001f, static_cast<float>(y) - 0.001f, static_cast<float>(z) + 1.001f};
+            line_batch.RewritePositionData();
+
+            line_batch.draw_box = true;
+
+
+            //auto stop = std::chrono::high_resolution_clock::now();
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+            //std::cout << "Time taken by Lighting: " << duration.count() << " microseconds\n";
+        } else {
+            line_batch.positions_[0] = {iend.x - 0.001f, iend.y - 0.001f, iend.z - 0.001f};
+            line_batch.positions_[1] = {iend.x - 0.001f, iend.y + 1.001f, iend.z - 0.001f};
+            line_batch.positions_[2] = {iend.x - 0.001f, iend.y + 1.001f, iend.z + 1.001f};
+            line_batch.positions_[3] = {iend.x - 0.001f, iend.y - 0.001f, iend.z + 1.001f};
+            line_batch.positions_[4] = {iend.x + 1.001f, iend.y - 0.001f, iend.z - 0.001f};
+            line_batch.positions_[5] = {iend.x + 1.001f, iend.y + 1.001f, iend.z - 0.001f};
+            line_batch.positions_[6] = {iend.x + 1.001f, iend.y + 1.001f, iend.z + 1.001f};
+            line_batch.positions_[7] = {iend.x + 1.001f, iend.y - 0.001f, iend.z + 1.001f};
+            line_batch.RewritePositionData();
+
+            line_batch.draw_box = true;
         }
     } else {
         line_batch.draw_box = false;
@@ -829,17 +949,13 @@ void ChunkStorage::CaptureTarget(LineBatch& line_batch, const Camera& camera) {
 void ChunkStorage::UpdateChanges() {
     for (int i = 0; i < chunk_count; ++i) {
         if (chunks_[i]->is_modified) {
-            auto start = std::chrono::high_resolution_clock::now();
+            //auto start = std::chrono::high_resolution_clock::now();
 
             chunks_[i]->GreedyMesh();
 
-
-            //std::cout << ((chunks_[i]->vertex_data[0] >> 46) & 0x7F) << ' ' << ((chunks_[i]->vertex_data[0] >> 39) & 0x7F) << ' '
-            //          << ((chunks_[i]->vertex_data[0] >> 32) & 0x7F) << ' ' << ((chunks_[i]->vertex_data[0] >> 25) & 0x7F) << '\n';
-
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-            //std::cout << "Time taken by function: " << duration.count() << " microseconds\n";
+            //auto stop = std::chrono::high_resolution_clock::now();
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+            //std::cout << "Time taken by Greedy Meshing: " << duration.count() << " microseconds\n";
             //std::cout << "Faces count: " << chunks_[i]->vertex_data_size / Chunk::VERTICES_COUNT_PER_SQUARE << '\n';
         }
     }

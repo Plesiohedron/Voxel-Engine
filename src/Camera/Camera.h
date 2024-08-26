@@ -11,7 +11,7 @@ class Camera {
 
 public:
     void UpdateVectors();
-    void Rotate(const float x, const float y, const float z);
+    void Rotate(float x, float y, float z);
 
     glm::mat4 GetProjection() const;
     glm::mat4 GetView() const;
@@ -30,6 +30,6 @@ public:
     float camera_rotation_Y = 0.0f;
 
 private:
-    Camera(const glm::vec3 pos, const float FOV);
+    Camera(const glm::vec3& pos, float FOV);
     ~Camera() = default;
 };

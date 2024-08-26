@@ -33,12 +33,21 @@ public:
 
     bool debug_mode = false;
 
+    glm::vec3 frustum_TL;
+    glm::vec3 frustum_TR;
+    glm::vec3 frustum_BR;
+    glm::vec3 frustum_BL;
+
+    float frustum_side_edge_length;
+    float frustum_volume_sixed;
+
 private:
     Chunks(const int radius, const glm::ivec3& center);
     Chunks(const Chunks&) = delete;
     ~Chunks();
 
 public:
+    void FrustumCulling(const glm::vec3& camera_position);
     void PollUpdates();
     void Draw(const Camera& camera) const;
 };

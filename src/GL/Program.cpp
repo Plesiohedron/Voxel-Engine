@@ -2,15 +2,11 @@
 
 #include <fstream>
 
-GL::Program::Program(const std::string& name, bool geometry_shader_option) : geometry_shader_option_{geometry_shader_option} {
+GL::Program::Program(const std::string& name) {
     program_ = glCreateProgram();
 
     vertex_shader_ = LoadShader(("res/glsl/" + name + ".vert").c_str(), GL_VERTEX_SHADER);
     fragment_shader_ = LoadShader(("res/glsl/" + name + ".frag").c_str(), GL_FRAGMENT_SHADER);
-
-    //if (geometry_shader_option_) {
-    //    geometry_shader_ = LoadShader()
-    //}
 }
 
 GL::Program::~Program() {

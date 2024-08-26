@@ -6,6 +6,20 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
     storage_.rendering_center = center;
     storage_.rendering_radius = radius;
 
+    float h_near = tan(glm::radians(90.0f) / 2) * 1;
+    float w_near = h_near * Events::window->GetAspect();
+
+    frustum_TL = glm::normalize(glm::vec3(-w_near, h_near, 1));
+    frustum_TR = glm::normalize(glm::vec3(w_near, h_near, 1));
+    frustum_BR = glm::normalize(glm::vec3(w_near, -h_near, 1));
+    frustum_BL = glm::normalize(glm::vec3(-w_near, -h_near, 1));
+
+    frustum_side_edge_length = 512;  // change later
+
+    glm::dmat3 half_volume{frustum_TL, frustum_TR, frustum_BR};
+
+    frustum_volume_sixed = 2 * std::abs(glm::determinant(half_volume));
+
     models_ = new glm::mat4[storage_.chunk_count];
     VAOs_ = new GL::SChunkVAO*[storage_.sizes.x * storage_.sizes.z];
 
@@ -71,7 +85,7 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
     matrices_SSBO_.InitializeMatrices(models_, storage_.chunk_count, 0);
 
 
-    shader_ = std::make_unique<GL::Program>("Chunks", true);
+    shader_ = std::make_unique<GL::Program>("Chunks");
     shader_->BindAttribute(0, "color");
     shader_->BindAttribute(1, "UV");
     shader_->BindAttribute(2, "position");
@@ -90,6 +104,85 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
     texture_atlas_->Bind();
     shader_->UniformTexture(uniform_texture_loc_, 0);
     GL::Program::Unuse();
+}
+
+void Chunks::FrustumCulling(const glm::vec3& camera_position) {
+    for (int i = 0; i < storage_.chunk_count; ++i) {
+        storage_.chunks_[i]->is_visible = false;
+    }
+
+    storage_.FrustumRayCast(camera_position, frustum_TL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position, frustum_TR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position, frustum_BR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position, frustum_BL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+
+    for (int global_z = (storage_.rendering_center.z - storage_.sizes.z / 2) * Chunk::DEPTH;
+         global_z <= (storage_.rendering_center.z + (storage_.sizes.z + 1) / 2) * Chunk::DEPTH; global_z += Chunk::DEPTH) {
+        for (int global_x = (storage_.rendering_center.x - storage_.sizes.x / 2) * Chunk::WIDTH;
+             global_x <= (storage_.rendering_center.x + (storage_.sizes.x + 1) / 2) * Chunk::WIDTH; global_x += Chunk::WIDTH) {
+            for (int global_y = 0; global_y <= storage_.sizes.y * Chunk::HEIGHT; global_y += Chunk::HEIGHT) {
+                glm::dvec3 frustum_top_vertex = static_cast<glm::dvec3>(camera_position);
+                glm::dvec3 frustum_TLvertex = static_cast<glm::dvec3>(camera_position + frustum_TL);
+                glm::dvec3 frustum_TRvertex = static_cast<glm::dvec3>(camera_position + frustum_TR);
+                glm::dvec3 frustum_BRvertex = static_cast<glm::dvec3>(camera_position + frustum_BR);
+                glm::dvec3 frustum_BLvertex = static_cast<glm::dvec3>(camera_position + frustum_BL);
+
+                glm::dvec3 separate_vertex = frustum_top_vertex + (glm::dvec3(global_x, global_y, global_z) - frustum_top_vertex) * (1.0 / frustum_side_edge_length);
+
+                glm::dmat3 volume1{separate_vertex - frustum_top_vertex, separate_vertex - frustum_TLvertex, separate_vertex - frustum_TRvertex};
+                glm::dmat3 volume2{separate_vertex - frustum_top_vertex, separate_vertex - frustum_BRvertex, separate_vertex - frustum_TRvertex};
+                glm::dmat3 volume3{separate_vertex - frustum_top_vertex, separate_vertex - frustum_BRvertex, separate_vertex - frustum_BLvertex};
+                glm::dmat3 volume4{separate_vertex - frustum_top_vertex, separate_vertex - frustum_TLvertex, separate_vertex - frustum_BLvertex};
+                glm::dmat3 volume5{separate_vertex - frustum_TRvertex,   separate_vertex - frustum_TLvertex, separate_vertex - frustum_BLvertex};
+                glm::dmat3 volume6{separate_vertex - frustum_TRvertex,   separate_vertex - frustum_BRvertex, separate_vertex - frustum_BLvertex};
+
+                double result_volume_sixed = std::abs(glm::determinant(volume1)) + std::abs(glm::determinant(volume2)) + std::abs(glm::determinant(volume3)) +
+                                             std::abs(glm::determinant(volume4)) + std::abs(glm::determinant(volume5)) + std::abs(glm::determinant(volume6));
+
+                if (frustum_volume_sixed - 0.00005 < result_volume_sixed && result_volume_sixed < frustum_volume_sixed + 0.00005) {
+                    int chunk_local_x = global_x / Chunk::WIDTH - storage_.rendering_center.x + storage_.sizes.x / 2;
+                    int chunk_local_y = global_y / Chunk::HEIGHT;
+                    int chunk_local_z = global_z / Chunk::DEPTH - storage_.rendering_center.z + storage_.sizes.z / 2;
+
+                    if (chunk_local_x - 1 >= 0 && chunk_local_y - 1 >= 0 && chunk_local_z - 1 >= 0) {
+                        storage_.chunks_[((chunk_local_y - 1) * storage_.sizes.z + (chunk_local_z - 1)) * storage_.sizes.x + (chunk_local_x - 1)]
+                            ->is_visible = true;
+                    }
+                    if (chunk_local_x - 1 >= 0 && chunk_local_y - 1 >= 0 && chunk_local_z < storage_.sizes.z) {
+                        storage_.chunks_[((chunk_local_y - 1) * storage_.sizes.z + chunk_local_z) * storage_.sizes.x + (chunk_local_x - 1)]
+                            ->is_visible = true;
+                    }
+                    if (chunk_local_x - 1 >= 0 && chunk_local_y < storage_.sizes.y && chunk_local_z - 1 >= 0) {
+                        storage_.chunks_[(chunk_local_y * storage_.sizes.z + (chunk_local_z - 1)) * storage_.sizes.x + (chunk_local_x - 1)]
+                            ->is_visible = true;
+                    }
+                    if (chunk_local_x - 1 >= 0 && chunk_local_y < storage_.sizes.y && chunk_local_z < storage_.sizes.z) {
+                        storage_.chunks_[(chunk_local_y * storage_.sizes.z + chunk_local_z) * storage_.sizes.x + (chunk_local_x - 1)]
+                            ->is_visible = true;
+                    }
+                    if (chunk_local_x < storage_.sizes.x && chunk_local_y - 1 >= 0 && chunk_local_z - 1 >= 0) {
+                        storage_.chunks_[((chunk_local_y - 1) * storage_.sizes.z + (chunk_local_z - 1)) * storage_.sizes.x + chunk_local_x]
+                            ->is_visible = true;
+                    }
+                    if (chunk_local_x < storage_.sizes.x && chunk_local_y - 1 >= 0 && chunk_local_z < storage_.sizes.z) {
+                        storage_.chunks_[((chunk_local_y - 1) * storage_.sizes.z + chunk_local_z) * storage_.sizes.x + chunk_local_x]
+                            ->is_visible = true;
+                    }
+                    if (chunk_local_x < storage_.sizes.x && chunk_local_y < storage_.sizes.y && chunk_local_z - 1 >= 0) {
+                        storage_.chunks_[(chunk_local_y * storage_.sizes.z + (chunk_local_z - 1)) * storage_.sizes.x + chunk_local_x]
+                            ->is_visible = true;
+                    }
+                    if (chunk_local_x < storage_.sizes.x && chunk_local_y < storage_.sizes.y && chunk_local_z < storage_.sizes.z) {
+                        storage_.chunks_[(chunk_local_y * storage_.sizes.z + chunk_local_z) * storage_.sizes.x + chunk_local_x]
+                            ->is_visible = true;
+                    }
+
+                    //std::cout << frustum_volume_sixed << ' ' << result_volume_sixed << ' '
+                    //          << chunk_local_x << ' ' << chunk_local_y << ' ' << chunk_local_z << '\n';
+                }
+            }
+        }
+    }
 }
 
 void Chunks::PollUpdates() {
@@ -202,11 +295,13 @@ void Chunks::Draw(const Camera& camera) const {
 
             int offset = 0;
             for (int y = 0; y < storage_.sizes.y; ++y) {
-                shader_->UniformInt(uniform_model_index_loc_, (y * storage_.sizes.z + z) * storage_.sizes.x + x);
-                glDrawElementsBaseVertex(GL_TRIANGLES,
-                                         storage_.chunks_[(y * storage_.sizes.z + z) * storage_.sizes.x + x]->voxel_faces_size *
-                                             Chunk::INDEXES_COUNT_PER_SQUARE,
-                                         GL_UNSIGNED_INT, nullptr, Chunk::VERTICES_COUNT_PER_SQUARE * offset);
+                if (storage_.chunks_[(y * storage_.sizes.z + z) * storage_.sizes.x + x]->is_visible) {
+                    shader_->UniformInt(uniform_model_index_loc_, (y * storage_.sizes.z + z) * storage_.sizes.x + x);
+                    glDrawElementsBaseVertex(GL_TRIANGLES,
+                                             storage_.chunks_[(y * storage_.sizes.z + z) * storage_.sizes.x + x]->voxel_faces_size *
+                                                 Chunk::INDEXES_COUNT_PER_SQUARE,
+                                             GL_UNSIGNED_INT, nullptr, Chunk::VERTICES_COUNT_PER_SQUARE * offset);
+                }
                 offset += storage_.chunks_[(y * storage_.sizes.z + z) * storage_.sizes.x + x]->voxel_faces_capacity;
             }
         }

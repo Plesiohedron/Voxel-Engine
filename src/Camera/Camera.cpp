@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-Camera::Camera(const glm::vec3 pos, const float FOV) : position(pos), FOV(FOV), rotation(1.0f) {
+Camera::Camera(const glm::vec3& pos, float FOV) : position(pos), FOV(FOV), rotation(1.0f) {
     UpdateVectors();
 }
 
@@ -10,7 +10,7 @@ void Camera::UpdateVectors() {
     vector_right = glm::vec3(rotation * glm::vec4(1, 0, 0, 1));
 }
 
-void Camera::Rotate(const float x, const float y, const float z) {
+void Camera::Rotate(float x, float y, float z) {
     rotation = glm::rotate(rotation, z, glm::vec3(0, 0, 1));
     rotation = glm::rotate(rotation, y, glm::vec3(0, 1, 0));
     rotation = glm::rotate(rotation, x, glm::vec3(1, 0, 0));

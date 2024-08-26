@@ -8,7 +8,7 @@
 
 class Engine {
 public:
-    inline static Engine& Instance(const int window_width, const int window_height, const char* window_title) {
+    inline static Engine& Instance(int window_width, int window_height, const char* window_title) {
         static Engine instance{window_width, window_height, window_title};
         return instance;
     }
@@ -23,7 +23,7 @@ private:
     Chunks* chunks_;
 
 private:
-    Engine(const int window_width, const int window_height, const char* window_title);
+    Engine(int window_width, int window_height, const char* window_title);
     ~Engine();
 
     Engine(const Engine&) = delete;

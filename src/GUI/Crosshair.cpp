@@ -1,7 +1,7 @@
 #include "Crosshair.h"
 
 Crosshair::Crosshair() : model_(1.0f) {
-    shader_ = std::make_unique<GL::Program>("Crosshair", false);
+    shader_ = std::make_unique<GL::Program>("Crosshair");
     VAO_ = std::make_unique<GL::VAO>();
 
     texture_ = std::make_unique<GL::Texture2D>();
@@ -41,7 +41,7 @@ void Crosshair::UpdateModel() {
 }
 
 void Crosshair::Draw() {
-    //MakeCrosshairRegionTexture();
+    MakeCrosshairRegionTexture();
 
     shader_->Use();
     shader_->UniformMatrix(uniform_model_loc_, model_);

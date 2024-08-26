@@ -43,5 +43,6 @@ private:
     ChunkStorage(const glm::ivec3& sizes);
     ~ChunkStorage();
 
-    Voxel* RayCast(const glm::vec3& a, const glm::vec3& dir, float max_ray_length, glm::vec3& end, glm::ivec3& normal, glm::ivec3& iend) const;
+    Voxel* RayCast(const glm::vec3& position, const glm::vec3& direction, float& ray_length, glm::vec3& end, glm::ivec3& normal, glm::vec3& iend) const;
+    void FrustumRayCast(const glm::vec3& position, const glm::vec3& direction, float ray_length) const;
 };

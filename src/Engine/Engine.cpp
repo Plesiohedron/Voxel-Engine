@@ -3,8 +3,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
-Engine::Engine(const int window_width, const int window_height, const char* window_title)
-    : window_{window_width, window_height, window_title}, camera_{{0.0f, 0.0f, -5.0f}, glm::radians(90.0f)},
+Engine::Engine(int window_width, int window_height, const char* window_title)
+    : window_{window_width, window_height, window_title}, camera_{{0.0f, 12.0f, 0.0f}, glm::radians(90.0f)},
     GUI_{}, line_batch_{} {
 
     camera_.Rotate(0.0f, glm::radians(180.0f), 0.0f);
@@ -50,6 +50,9 @@ void Engine::MainLoop() {
     float speed = 15.0f;
 
     int index = 1;
+
+    const float h_near = tan(glm::radians(90.0f) / 2);
+    const float w_near = h_near * Events::window->GetAspect();
 
     while (!window_.IsShouldClose()) {
         current_time = glfwGetTime();
@@ -121,6 +124,11 @@ void Engine::MainLoop() {
 
                 camera_.rotation = glm::mat4(1.0f);
                 camera_.Rotate(camera_.camera_rotation_Y, camera_.camera_rotation_X, 0.0f);
+
+                chunks_->frustum_TL = glm::vec3(camera_.rotation * glm::vec4(glm::normalize(glm::vec3(-w_near, h_near, -1)), 1));
+                chunks_->frustum_TR = glm::vec3(camera_.rotation * glm::vec4(glm::normalize(glm::vec3(w_near, h_near, -1)), 1));
+                chunks_->frustum_BR = glm::vec3(camera_.rotation * glm::vec4(glm::normalize(glm::vec3(w_near, -h_near, -1)), 1));
+                chunks_->frustum_BL = glm::vec3(camera_.rotation * glm::vec4(glm::normalize(glm::vec3(-w_near, -h_near, -1)), 1));
             }
 
             if (Events::KeyIsClicked(GLFW_KEY_E)) {
@@ -138,13 +146,16 @@ void Engine::MainLoop() {
 
             chunks_->storage_.UpdateChanges();
             chunks_->PollUpdates();
-            chunks_->Draw(camera_);
 
             if (line_batch_.draw_box) {
                 line_batch_.Draw(camera_);
             }
 
-            //GUI_.crosshair.Draw();
+            chunks_->FrustumCulling(camera_.position);
+
+            chunks_->Draw(camera_);
+
+            GUI_.crosshair.Draw();
         }
 
         window_.SwapBuffers();
