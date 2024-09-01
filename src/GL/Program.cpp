@@ -1,6 +1,8 @@
 #include "Program.h"
 
 #include <fstream>
+#include "Program.h"
+#include "Program.h"
 
 GL::Program::Program(const std::string& name) {
     program_ = glCreateProgram();

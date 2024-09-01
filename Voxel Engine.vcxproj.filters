@@ -23,6 +23,7 @@
     <ClCompile Include="src\Lighting\Lightmap.cpp" />
     <ClCompile Include="src\Lighting\LightProcessor.cpp" />
     <ClCompile Include="src\Chunks\ChunkStorage.cpp" />
+    <ClCompile Include="src\CL\ComputeProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Engine\Engine.h" />
@@ -47,6 +48,7 @@
     <ClInclude Include="src\Lighting\Lightmap.h" />
     <ClInclude Include="src\Lighting\LightProcessor.h" />
     <ClInclude Include="src\Chunks\ChunkStorage.h" />
+    <ClInclude Include="src\CL\ComputeProgram.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -56,6 +58,7 @@
     <None Include="res\glsl\Crosshair.frag" />
     <None Include="res\glsl\Lines.vert" />
     <None Include="res\glsl\Lines.frag" />
+    <None Include="res\cl\FrustumCulling.cl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\texture\Atlas.png" />

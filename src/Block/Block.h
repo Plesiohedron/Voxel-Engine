@@ -5,6 +5,7 @@
 struct Block {
     uint8_t texture_id[6];
     uint8_t r, g, b;
+    bool is_transparent;
 };
 
 namespace Blocks {

@@ -7,6 +7,10 @@
 #include <glm/glm.hpp>
 
 class ChunkStorage {
+
+    friend class Engine;  //
+
+
     friend class Chunk;
     friend class Chunks;
 
@@ -23,6 +27,9 @@ private:
     uint16_t* face_planes_;
     uint16_t* lightmaps_;
     Chunk** chunks_;
+
+    glm::ivec3* reachability_field_queue;
+    uint16_t* reachability_field;
 
     LightProcessor* R;
     LightProcessor* G;

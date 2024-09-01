@@ -113,7 +113,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\Voxel Engine\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;/NODEFAULTLIB:MSVCRT;/NODEFAULTLIB:LIBCMT;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenCL.lib;glfw3.lib;opengl32.lib;glew32s.lib;/NODEFAULTLIB:MSVCRT;/NODEFAULTLIB:LIBCMT;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,11 +135,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;glew32s.lib;/NODEFAULTLIB:LIBCMT;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OpenCL.lib;glfw3.lib;opengl32.lib;glew32s.lib;/NODEFAULTLIB:LIBCMT;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\Voxel Engine\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CL\ComputeProgram.cpp" />
     <ClCompile Include="src\Chunks\ChunkStorage.cpp" />
     <ClCompile Include="src\Lighting\LightProcessor.cpp" />
     <ClCompile Include="src\Lighting\Lightmap.cpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="src\GL\SSBO.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\CL\ComputeProgram.h" />
     <ClInclude Include="src\Chunks\ChunkStorage.h" />
     <ClInclude Include="src\Lighting\LightProcessor.h" />
     <ClInclude Include="src\Lighting\Lightmap.h" />
@@ -189,6 +191,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
+    <None Include="res\cl\FrustumCulling.cl" />
     <None Include="res\glsl\Crosshair.frag" />
     <None Include="res\glsl\Crosshair.vert" />
     <None Include="res\glsl\Chunks.frag" />

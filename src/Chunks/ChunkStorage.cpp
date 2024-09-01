@@ -14,6 +14,9 @@ ChunkStorage::ChunkStorage(const glm::ivec3& sizes) : sizes(sizes) {
     face_planes_ = new uint16_t[chunk_count * Chunk::DIRECTION_SIZE_P2 * Chunk::FACES_COUNT_PER_CUBE]{};
     chunks_ = new Chunk*[chunk_count];
 
+    reachability_field_queue = new glm::ivec3[Chunk::VOLUME];
+    reachability_field = new uint16_t[Chunk::DIRECTION_SIZE_P2];
+
     if (voxels_ == nullptr) {
         std::cout << "Bad alloc: voxels_" << std::endl;
         std::exit(EXIT_FAILURE);
@@ -114,17 +117,17 @@ ChunkStorage::ChunkStorage(const glm::ivec3& sizes) : sizes(sizes) {
                     int global_z = z + chunks_[i]->global_coordinates.z * Chunk::HEIGHT;
 
                     if (chunks_[i]->voxels_[(y * Chunk::DEPTH + z) * Chunk::WIDTH + x].id == 4) {
-                        R->Add(global_x, global_y, global_z, 15);
-                        G->Add(global_x, global_y, global_z, 0);
-                        B->Add(global_x, global_y, global_z, 0);
+                        R->Add(global_x, global_y, global_z, Blocks::blocks[4].r);
+                        G->Add(global_x, global_y, global_z, Blocks::blocks[4].g);
+                        B->Add(global_x, global_y, global_z, Blocks::blocks[4].b);
                     } else if (chunks_[i]->voxels_[(y * Chunk::DEPTH + z) * Chunk::WIDTH + x].id == 5) {
-                        R->Add(global_x, global_y, global_z, 0);
-                        G->Add(global_x, global_y, global_z, 15);
-                        B->Add(global_x, global_y, global_z, 0);
+                        R->Add(global_x, global_y, global_z, Blocks::blocks[5].r);
+                        G->Add(global_x, global_y, global_z, Blocks::blocks[5].g);
+                        B->Add(global_x, global_y, global_z, Blocks::blocks[5].b);
                     } else if (chunks_[i]->voxels_[(y * Chunk::DEPTH + z) * Chunk::WIDTH + x].id == 6) {
-                        R->Add(global_x, global_y, global_z, 0);
-                        G->Add(global_x, global_y, global_z, 0);
-                        B->Add(global_x, global_y, global_z, 15);
+                        R->Add(global_x, global_y, global_z, Blocks::blocks[6].r);
+                        G->Add(global_x, global_y, global_z, Blocks::blocks[6].g);
+                        B->Add(global_x, global_y, global_z, Blocks::blocks[6].b);
                     } 
                 }
             }
@@ -193,6 +196,9 @@ ChunkStorage::~ChunkStorage() {
         delete chunks_[i];
     }
     delete[] chunks_;
+
+    delete[] reachability_field_queue;
+    delete[] reachability_field;
 }
 
 Voxel* ChunkStorage::GetVoxel(int x, int y, int z) const {
@@ -228,6 +234,16 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
     chunk->is_modified = true;
 
     if (block_id) {
+        if (chunk->reachability_code != 0b000000'000000'000000'000000'000000'000000) {
+            //auto start = std::chrono::high_resolution_clock::now();
+            
+            chunk->CalculateReachabilityCode();
+
+            //auto stop = std::chrono::high_resolution_clock::now();
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+            //std::cout << "Time taken by Calculating Reachability Code: " << duration.count() << " microseconds\n";
+        }
 
         if (x == Chunk::WIDTH - 1) {
             if (!chunk->IsBlocked(Chunk::WIDTH, y, z)) {
@@ -369,6 +385,16 @@ void ChunkStorage::SetVoxel(int x, int y, int z, uint8_t block_id) {
         }
 
     } else {
+        if (chunk->reachability_code != 0b111111'111111'111111'111111'111111'111111) {
+            //auto start = std::chrono::high_resolution_clock::now();
+
+            chunk->CalculateReachabilityCode();
+
+            //auto stop = std::chrono::high_resolution_clock::now();
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+
+            //std::cout << "Time taken by Calculating Reachability Code: " << duration.count() << " microseconds\n";
+        }
 
         if (x == Chunk::WIDTH - 1) {
             if (!chunk->IsBlocked(Chunk::WIDTH, y, z)) {
@@ -740,9 +766,9 @@ Voxel* ChunkStorage::RayCast(const glm::vec3& position, const glm::vec3& directi
 }
 
 void ChunkStorage::FrustumRayCast(const glm::vec3& position, const glm::vec3& direction, float ray_length) const {
-    float px = position.x / Chunk::WIDTH - rendering_center.x + (sizes.x / 2);
-    float py = position.y / Chunk::HEIGHT;
-    float pz = position.z / Chunk::DEPTH - rendering_center.z + (sizes.z / 2);
+    float px = position.x - rendering_center.x + (sizes.x / 2);
+    float py = position.y;
+    float pz = position.z - rendering_center.z + (sizes.z / 2);
 
     float dx = direction.x;
     float dy = direction.y;

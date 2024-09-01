@@ -6,19 +6,12 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
     storage_.rendering_center = center;
     storage_.rendering_radius = radius;
 
-    float h_near = tan(glm::radians(90.0f) / 2) * 1;
-    float w_near = h_near * Events::window->GetAspect();
-
     frustum_TL = glm::normalize(glm::vec3(-w_near, h_near, 1));
     frustum_TR = glm::normalize(glm::vec3(w_near, h_near, 1));
     frustum_BR = glm::normalize(glm::vec3(w_near, -h_near, 1));
     frustum_BL = glm::normalize(glm::vec3(-w_near, -h_near, 1));
 
     frustum_side_edge_length = 512;  // change later
-
-    glm::dmat3 half_volume{frustum_TL, frustum_TR, frustum_BR};
-
-    frustum_volume_sixed = 2 * std::abs(glm::determinant(half_volume));
 
     models_ = new glm::mat4[storage_.chunk_count];
     VAOs_ = new GL::SChunkVAO*[storage_.sizes.x * storage_.sizes.z];
@@ -104,45 +97,88 @@ Chunks::Chunks(int radius, const glm::ivec3& center) : storage_({2 * radius - 1,
     texture_atlas_->Bind();
     shader_->UniformTexture(uniform_texture_loc_, 0);
     GL::Program::Unuse();
+
+    #ifdef FRUSTUM_CULLING_GPU
+    program_ = std::make_unique<CL::Program>("FrustumCulling");
+
+    program_->CreateBuffer(CL_MEM_READ_ONLY | CL_MEM_ALLOC_HOST_PTR, sizeof(float) * 18);
+    program_->CreateBuffer(CL_MEM_WRITE_ONLY, sizeof(char) * storage_.chunk_count);
+    input_buffer.resize(18);
+
+    program_->CreateKernel("Culling", {static_cast<size_t>(storage_.sizes.x + 1), static_cast<size_t>(storage_.sizes.z + 1), static_cast<size_t>(storage_.sizes.y + 1)}, {0, 1});
+    #endif
 }
 
-void Chunks::FrustumCulling(const glm::vec3& camera_position) {
+void Chunks::FrustumCulling(const glm::vec3& camera_position) const {
+    #ifdef FRUSTUM_CULLING_GPU
+    input_buffer[0] = rotation[0][0];
+    input_buffer[1] = rotation[1][0];
+    input_buffer[2] = rotation[2][0];
+    input_buffer[3] = rotation[0][1];
+    input_buffer[4] = rotation[1][1];
+    input_buffer[5] = rotation[2][1];
+    input_buffer[6] = rotation[0][2];
+    input_buffer[7] = rotation[1][2];
+    input_buffer[8] = rotation[2][2];
+    input_buffer[9] = camera_position.x / Chunk::DIRECTION_SIZE;
+    input_buffer[10] = camera_position.y / Chunk::DIRECTION_SIZE;
+    input_buffer[11] = camera_position.z / Chunk::DIRECTION_SIZE;
+    input_buffer[12] = static_cast<float>(storage_.rendering_center.x);
+    input_buffer[13] = static_cast<float>(storage_.rendering_center.z);
+    input_buffer[14] = static_cast<float>(storage_.sizes.x);
+    input_buffer[15] = static_cast<float>(storage_.sizes.z);
+    input_buffer[16] = Events::window->GetAspect() / tan(glm::radians(90.0f) / 2);
+    input_buffer[17] = frustum_side_edge_length / Chunk::DIRECTION_SIZE;
+    output_buffer = std::vector<char>(storage_.chunk_count, 0);
+
+    program_->WriteToBuffer(input_buffer, 0);
+    program_->WriteToBuffer(output_buffer, 1);
+    program_->EnqueueKernel(0);
+
     for (int i = 0; i < storage_.chunk_count; ++i) {
         storage_.chunks_[i]->is_visible = false;
     }
 
-    storage_.FrustumRayCast(camera_position, frustum_TL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
-    storage_.FrustumRayCast(camera_position, frustum_TR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
-    storage_.FrustumRayCast(camera_position, frustum_BR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
-    storage_.FrustumRayCast(camera_position, frustum_BL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_TL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_TR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_BR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_BL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
 
-    for (int global_z = (storage_.rendering_center.z - storage_.sizes.z / 2) * Chunk::DEPTH;
-         global_z <= (storage_.rendering_center.z + (storage_.sizes.z + 1) / 2) * Chunk::DEPTH; global_z += Chunk::DEPTH) {
-        for (int global_x = (storage_.rendering_center.x - storage_.sizes.x / 2) * Chunk::WIDTH;
-             global_x <= (storage_.rendering_center.x + (storage_.sizes.x + 1) / 2) * Chunk::WIDTH; global_x += Chunk::WIDTH) {
-            for (int global_y = 0; global_y <= storage_.sizes.y * Chunk::HEIGHT; global_y += Chunk::HEIGHT) {
-                glm::dvec3 frustum_top_vertex = static_cast<glm::dvec3>(camera_position);
-                glm::dvec3 frustum_TLvertex = static_cast<glm::dvec3>(camera_position + frustum_TL);
-                glm::dvec3 frustum_TRvertex = static_cast<glm::dvec3>(camera_position + frustum_TR);
-                glm::dvec3 frustum_BRvertex = static_cast<glm::dvec3>(camera_position + frustum_BR);
-                glm::dvec3 frustum_BLvertex = static_cast<glm::dvec3>(camera_position + frustum_BL);
+    program_->WaitQueue();
+    program_->ReadFromBuffer(output_buffer, 1);
 
-                glm::dvec3 separate_vertex = frustum_top_vertex + (glm::dvec3(global_x, global_y, global_z) - frustum_top_vertex) * (1.0 / frustum_side_edge_length);
+    for (int i = 0; i < storage_.chunk_count; ++i) {
+        if (output_buffer[i]) {
+            storage_.chunks_[i]->is_visible = true;
+        }
+    }
+    #else
+    for (int i = 0; i < storage_.chunk_count; ++i) {
+        storage_.chunks_[i]->is_visible = false;
+    }
 
-                glm::dmat3 volume1{separate_vertex - frustum_top_vertex, separate_vertex - frustum_TLvertex, separate_vertex - frustum_TRvertex};
-                glm::dmat3 volume2{separate_vertex - frustum_top_vertex, separate_vertex - frustum_BRvertex, separate_vertex - frustum_TRvertex};
-                glm::dmat3 volume3{separate_vertex - frustum_top_vertex, separate_vertex - frustum_BRvertex, separate_vertex - frustum_BLvertex};
-                glm::dmat3 volume4{separate_vertex - frustum_top_vertex, separate_vertex - frustum_TLvertex, separate_vertex - frustum_BLvertex};
-                glm::dmat3 volume5{separate_vertex - frustum_TRvertex,   separate_vertex - frustum_TLvertex, separate_vertex - frustum_BLvertex};
-                glm::dmat3 volume6{separate_vertex - frustum_TRvertex,   separate_vertex - frustum_BRvertex, separate_vertex - frustum_BLvertex};
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_TL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_TR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_BR, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
+    storage_.FrustumRayCast(camera_position / Chunk::DIRECTION_SIZE, frustum_BL, frustum_side_edge_length / Chunk::DIRECTION_SIZE);
 
-                double result_volume_sixed = std::abs(glm::determinant(volume1)) + std::abs(glm::determinant(volume2)) + std::abs(glm::determinant(volume3)) +
-                                             std::abs(glm::determinant(volume4)) + std::abs(glm::determinant(volume5)) + std::abs(glm::determinant(volume6));
+    int chunk_local_x;
+    int chunk_local_y;
+    int chunk_local_z;
 
-                if (frustum_volume_sixed - 0.00005 < result_volume_sixed && result_volume_sixed < frustum_volume_sixed + 0.00005) {
-                    int chunk_local_x = global_x / Chunk::WIDTH - storage_.rendering_center.x + storage_.sizes.x / 2;
-                    int chunk_local_y = global_y / Chunk::HEIGHT;
-                    int chunk_local_z = global_z / Chunk::DEPTH - storage_.rendering_center.z + storage_.sizes.z / 2;
+    for (int global_z = (storage_.rendering_center.z - storage_.sizes.z / 2);
+         global_z <= (storage_.rendering_center.z + (storage_.sizes.z + 1) / 2); ++global_z) {
+        for (int global_x = (storage_.rendering_center.x - storage_.sizes.x / 2);
+             global_x <= (storage_.rendering_center.x + (storage_.sizes.x + 1) / 2); ++global_x) {
+            for (int global_y = 0; global_y <= storage_.sizes.y; ++global_y) {
+                glm::vec3 vertex = glm::vec3(rotation * glm::vec4(glm::vec3(global_x, global_y, global_z) - camera_position / Chunk::DIRECTION_SIZE, 1));
+
+                if (vertex.z >= -frustum_side_edge_length / Chunk::DIRECTION_SIZE &&
+                    Events::window->GetAspect() / tan(glm::radians(90.0f) / 2) * vertex.z <= -std::max(std::abs(vertex.x), std::abs(vertex.y))) {
+
+                    chunk_local_x = global_x - storage_.rendering_center.x + storage_.sizes.x / 2;
+                    chunk_local_y = global_y;
+                    chunk_local_z = global_z - storage_.rendering_center.z + storage_.sizes.z / 2;
 
                     if (chunk_local_x - 1 >= 0 && chunk_local_y - 1 >= 0 && chunk_local_z - 1 >= 0) {
                         storage_.chunks_[((chunk_local_y - 1) * storage_.sizes.z + (chunk_local_z - 1)) * storage_.sizes.x + (chunk_local_x - 1)]
@@ -176,13 +212,812 @@ void Chunks::FrustumCulling(const glm::vec3& camera_position) {
                         storage_.chunks_[(chunk_local_y * storage_.sizes.z + chunk_local_z) * storage_.sizes.x + chunk_local_x]
                             ->is_visible = true;
                     }
-
-                    //std::cout << frustum_volume_sixed << ' ' << result_volume_sixed << ' '
-                    //          << chunk_local_x << ' ' << chunk_local_y << ' ' << chunk_local_z << '\n';
                 }
             }
         }
     }
+    #endif
+}
+
+void Chunks::ACCA(const glm::vec3& camera_position) {
+    for (int i = 0; i < storage_.chunk_count; ++i) {
+        storage_.chunks_[i]->is_reachable = 0;
+    }
+
+    Chunk* current_chunk = storage_.GetChunkByVoxel(floor(camera_position.x), floor(camera_position.y), floor(camera_position.z));
+    if (current_chunk == nullptr) {
+        return;
+    }
+
+    current_chunk->is_reachable = 0b111111;
+
+    glm::ivec3 starting_chunk_coordinates = current_chunk->global_coordinates;
+    glm::ivec3 local_chunk_coordinates = {current_chunk->global_coordinates.x - storage_.rendering_center.x + storage_.sizes.x / 2,
+                                          current_chunk->global_coordinates.y,
+                                          current_chunk->global_coordinates.z - storage_.rendering_center.z + storage_.sizes.z / 2};
+    int reached_from;
+
+    Chunk* next_chunk;
+
+    if (((current_chunk->reachability_code >> 0) & 1)) {
+        if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+            if (next_chunk->is_visible) {
+                ACCA_queue_.push({local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 1});
+                next_chunk->is_reachable = 0b000010;
+            }
+        }
+    }
+    if (((current_chunk->reachability_code >> 7) & 1)) {
+        if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+            if (next_chunk->is_visible) {
+                ACCA_queue_.push({local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 0});
+                next_chunk->is_reachable = 0b000001;
+            }
+        }
+    }
+    if (((current_chunk->reachability_code >> 14) & 1)) {
+        if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z)) {
+            if (next_chunk->is_visible) {
+                ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z, 3});
+                next_chunk->is_reachable = 0b001000;
+            }
+        }
+    }
+    if (((current_chunk->reachability_code >> 21) & 1)) {
+        if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z)) {
+            if (next_chunk->is_visible) {
+                ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z, 2});
+                next_chunk->is_reachable = 0b000100;
+            }
+        }
+    }
+    if (((current_chunk->reachability_code >> 28) & 1)) {
+        if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1)) {
+            if (next_chunk->is_visible) {
+                ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1, 5});
+                next_chunk->is_reachable = 0b100000;
+            }
+        }
+    }
+    if (((current_chunk->reachability_code >> 35) & 1)) {
+        if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1)) {
+            if (next_chunk->is_visible) {
+                ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1, 4});
+                next_chunk->is_reachable = 0b010000;
+            }
+        }
+    }
+
+    while (!ACCA_queue_.empty()) {
+        local_chunk_coordinates = {ACCA_queue_.front().x, ACCA_queue_.front().y, ACCA_queue_.front().z};
+        reached_from = ACCA_queue_.front().w;
+        ACCA_queue_.pop();
+
+        current_chunk = storage_.chunks_[(local_chunk_coordinates.y * storage_.sizes.z + local_chunk_coordinates.z) * storage_.sizes.x + local_chunk_coordinates.x];
+
+        if (reached_from == 0) {
+            if (((current_chunk->reachability_code >> 1) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000001))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 0});
+                            next_chunk->is_reachable |= 0b000001;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 2) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b001000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z, 3});
+                            next_chunk->is_reachable |= 0b001000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 3) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000100))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z, 2});
+                            next_chunk->is_reachable |= 0b000100;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 4) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b100000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1, 5});
+                            next_chunk->is_reachable |= 0b100000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 5) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b010000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1, 4});
+                            next_chunk->is_reachable |= 0b010000;
+                        }
+                    }
+                }
+            }
+        } else if (reached_from == 1) {
+            if (((current_chunk->reachability_code >> 6) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000010))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 1});
+                            next_chunk->is_reachable |= 0b000010;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 8) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b001000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z, 3});
+                            next_chunk->is_reachable |= 0b001000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 9) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000100))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z, 2});
+                            next_chunk->is_reachable |= 0b000100;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 10) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b100000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1, 5});
+                            next_chunk->is_reachable |= 0b100000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 11) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b010000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1, 4});
+                            next_chunk->is_reachable |= 0b010000;
+                        }
+                    }
+                }
+            }
+        } else if (reached_from == 2) {
+            if (((current_chunk->reachability_code >> 12) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000010))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 1});
+                            next_chunk->is_reachable |= 0b000010;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 13) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000001))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 0});
+                            next_chunk->is_reachable |= 0b000001;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 15) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000100))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z, 2});
+                            next_chunk->is_reachable |= 0b000100;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 16) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b100000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1, 5});
+                            next_chunk->is_reachable |= 0b100000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 17) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b010000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1, 4});
+                            next_chunk->is_reachable |= 0b010000;
+                        }
+                    }
+                }
+            }
+        } else if (reached_from == 3) {
+            if (((current_chunk->reachability_code >> 18) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000010))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 1});
+                            next_chunk->is_reachable |= 0b000010;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 19) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000001))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 0});
+                            next_chunk->is_reachable |= 0b000001;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 20) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b001000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z, 3});
+                            next_chunk->is_reachable |= 0b001000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 22) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b100000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1, 5});
+                            next_chunk->is_reachable |= 0b100000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 23) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b010000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1, 4});
+                            next_chunk->is_reachable |= 0b010000;
+                        }
+                    }
+                }
+            }
+        } else if (reached_from == 4) {
+            if (((current_chunk->reachability_code >> 24) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000010))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 1});
+                            next_chunk->is_reachable |= 0b000010;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 25) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000001))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 0});
+                            next_chunk->is_reachable |= 0b000001;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 26) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b001000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z, 3});
+                            next_chunk->is_reachable |= 0b001000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 27) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000100))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z, 2});
+                            next_chunk->is_reachable |= 0b000100;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 29) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b010000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z + 1, 4});
+                            next_chunk->is_reachable |= 0b010000;
+                        }
+                    }
+                }
+            }
+        } else {
+            if (((current_chunk->reachability_code >> 30) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000010))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x - 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 1});
+                            next_chunk->is_reachable |= 0b000010;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 31) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000001))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x + 1, local_chunk_coordinates.y, local_chunk_coordinates.z, 0});
+                            next_chunk->is_reachable |= 0b000001;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 32) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b001000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y - 1, local_chunk_coordinates.z, 3});
+                            next_chunk->is_reachable |= 0b001000;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 33) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b000100))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y + 1, local_chunk_coordinates.z, 2});
+                            next_chunk->is_reachable |= 0b000100;
+                        }
+                    }
+                }
+            }
+
+            if (((current_chunk->reachability_code >> 34) & 1)) {
+                if (next_chunk = storage_.GetChunk(local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1)) {
+                    if (next_chunk->is_visible && !((next_chunk->is_reachable & 0b100000))) {
+                        if ((current_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (current_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (current_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (current_chunk->global_coordinates.z - starting_chunk_coordinates.z) <
+
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) *
+                            (next_chunk->global_coordinates.x - starting_chunk_coordinates.x) +
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) *
+                            (next_chunk->global_coordinates.y - starting_chunk_coordinates.y) +
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z) *
+                            (next_chunk->global_coordinates.z - starting_chunk_coordinates.z)) {
+                        
+                            ACCA_queue_.push({local_chunk_coordinates.x, local_chunk_coordinates.y, local_chunk_coordinates.z - 1, 5});
+                            next_chunk->is_reachable |= 0b100000;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 void Chunks::PollUpdates() {
@@ -295,7 +1130,7 @@ void Chunks::Draw(const Camera& camera) const {
 
             int offset = 0;
             for (int y = 0; y < storage_.sizes.y; ++y) {
-                if (storage_.chunks_[(y * storage_.sizes.z + z) * storage_.sizes.x + x]->is_visible) {
+                if (storage_.chunks_[(y * storage_.sizes.z + z) * storage_.sizes.x + x]->is_reachable) {
                     shader_->UniformInt(uniform_model_index_loc_, (y * storage_.sizes.z + z) * storage_.sizes.x + x);
                     glDrawElementsBaseVertex(GL_TRIANGLES,
                                              storage_.chunks_[(y * storage_.sizes.z + z) * storage_.sizes.x + x]->voxel_faces_size *

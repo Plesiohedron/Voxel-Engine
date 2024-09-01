@@ -47,6 +47,9 @@ public:
 
     bool is_modified = true;
     bool is_visible = false;
+    uint8_t is_reachable = 0;
+
+    uint64_t reachability_code;
 
 private:
     Voxel* voxels_;
@@ -72,4 +75,7 @@ private:
     Chunk(const glm::ivec3& coordinates, Voxel* voxels, uint16_t* lightmap, uint16_t* face_planes, const ChunkStorage* chunk_storage);
     Chunk(const Chunk&) = delete;
     ~Chunk();
+
+public:
+    void CalculateReachabilityCode();
 };

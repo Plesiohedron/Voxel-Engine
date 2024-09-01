@@ -5,6 +5,7 @@
 #include <immintrin.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/noise.hpp>
+#include <bitset>
 
 #define ADD_FACE(l0, l1, l2, l3, texture_id, plane, row, bit, w, h) if (direction == 0) {\
 PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) | ((plane + 1) << 20) | (bit << 15) | (row << 10) | (h << 5) | w});\
@@ -44,6 +45,58 @@ else {\
     PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) | ((bit + w) << 20) | ((row + h) << 15) | (plane << 10) | (0 << 5) | 0});\
     PushBack({l0, l1, l2, l3, (static_cast<uint32_t>(texture_id) << 25) | ((bit + w) << 20) | (row << 15) | (plane << 10) | (0 << 5) | h});\
 }\
+
+
+#define QUEUE_STEP if (coordinates.x + 1 < Chunk::WIDTH &&\
+                       !((field[(coordinates.x + 1) * Chunk::HEIGHT + coordinates.y] >> coordinates.z) & 1) &&\
+                       Blocks::blocks[voxels_[(coordinates.y * Chunk::DEPTH + coordinates.z) * Chunk::WIDTH + coordinates.x + 1].id].is_transparent) {\
+                       queue[queue_size] = {coordinates.x + 1, coordinates.y, coordinates.z};\
+                       field[(coordinates.x + 1) * Chunk::HEIGHT + coordinates.y] |= (1 << coordinates.z);\
+\
+                       ++queue_size;\
+                    }\
+                    if (coordinates.x - 1 >= 0 &&\
+                        !((field[(coordinates.x - 1) * Chunk::HEIGHT + coordinates.y] >> coordinates.z) & 1) &&\
+                        Blocks::blocks[voxels_[(coordinates.y * Chunk::DEPTH + coordinates.z) * Chunk::WIDTH + coordinates.x - 1].id].is_transparent) {\
+                        queue[queue_size] = {coordinates.x - 1, coordinates.y, coordinates.z};\
+                        field[(coordinates.x - 1) * Chunk::HEIGHT + coordinates.y] |= (1 << coordinates.z);\
+\
+                        ++queue_size;\
+                    }\
+\
+                    if (coordinates.y + 1 < Chunk::HEIGHT &&\
+                        !((field[coordinates.x * Chunk::HEIGHT + coordinates.y + 1] >> coordinates.z) & 1) &&\
+                        Blocks::blocks[voxels_[((coordinates.y + 1) * Chunk::DEPTH + coordinates.z) * Chunk::WIDTH + coordinates.x].id].is_transparent) {\
+                        queue[queue_size] = {coordinates.x, coordinates.y + 1, coordinates.z};\
+                        field[coordinates.x * Chunk::HEIGHT + coordinates.y + 1] |= (1 << coordinates.z);\
+\
+                        ++queue_size;\
+                    }\
+                    if (coordinates.y - 1 >= 0 &&\
+                        !((field[coordinates.x * Chunk::HEIGHT + coordinates.y - 1] >> coordinates.z) & 1) &&\
+                        Blocks::blocks[voxels_[((coordinates.y - 1) * Chunk::DEPTH + coordinates.z) * Chunk::WIDTH + coordinates.x].id].is_transparent) {\
+                        queue[queue_size] = {coordinates.x, coordinates.y - 1, coordinates.z};\
+                        field[coordinates.x * Chunk::HEIGHT + coordinates.y - 1] |= (1 << coordinates.z);\
+\
+                        ++queue_size;\
+                    }\
+\
+                    if (coordinates.z + 1 < Chunk::DEPTH &&\
+                        !((field[coordinates.x * Chunk::HEIGHT + coordinates.y] >> (coordinates.z + 1)) & 1) &&\
+                        Blocks::blocks[voxels_[(coordinates.y * Chunk::DEPTH + (coordinates.z + 1)) * Chunk::WIDTH + coordinates.x].id].is_transparent) {\
+                        queue[queue_size] = {coordinates.x, coordinates.y, coordinates.z + 1};\
+                        field[coordinates.x * Chunk::HEIGHT + coordinates.y] |= (1 << (coordinates.z + 1));\
+\
+                        ++queue_size;\
+                    }\
+                    if (coordinates.z - 1 >= 0 &&\
+                        !((field[coordinates.x * Chunk::HEIGHT + coordinates.y] >> (coordinates.z - 1)) & 1) &&\
+                        Blocks::blocks[voxels_[(coordinates.y * Chunk::DEPTH + (coordinates.z - 1)) * Chunk::WIDTH + coordinates.x].id].is_transparent) {\
+                        queue[queue_size] = {coordinates.x, coordinates.y, coordinates.z - 1};\
+                        field[coordinates.x * Chunk::HEIGHT + coordinates.y] |= (1 << (coordinates.z - 1));\
+\
+                        ++queue_size;\
+                    }\
 
 Chunk::Chunk(const glm::ivec3& coordinates, Voxel* voxels, uint16_t* lightmap, uint16_t* face_planes, const ChunkStorage* chunk_storage) {
     global_coordinates = {coordinates.x - chunk_storage->sizes.x / 2, coordinates.y, coordinates.z - chunk_storage->sizes.z / 2};
@@ -106,6 +159,318 @@ Chunk::Chunk(const glm::ivec3& coordinates, Voxel* voxels, uint16_t* lightmap, u
     }
 
     Culling(X_rows, Y_rows, Z_rows);
+    CalculateReachabilityCode();
+}
+
+void Chunk::CalculateReachabilityCode() {
+    glm::ivec3* queue = chunk_storage_->reachability_field_queue;
+    uint16_t* field = chunk_storage_->reachability_field;
+    std::fill(field, field + Chunk::DIRECTION_SIZE_P2, 0);
+
+    int queue_size = 0;
+    int queue_index = 0;
+
+    reachability_code = 0;
+    uint64_t side_reachability_code = 0;
+
+    bool flag = false;
+
+    for (int y = 0; y < Chunk::HEIGHT; ++y) {
+        for (int z = 0; z < Chunk::DEPTH; ++z) {
+            if (!((field[0 * Chunk::HEIGHT + y] >> z) & 1) &&
+                Blocks::blocks[voxels_[(y * Chunk::DEPTH + z) * Chunk::WIDTH + 0].id].is_transparent) {
+                queue[queue_size] = {0, y, z};
+                field[0 * Chunk::HEIGHT + y] |= (1 << z);
+
+                ++queue_size;
+
+                side_reachability_code = (1ull << 0);
+                while (queue_index != queue_size) {
+                    glm::ivec3 coordinates = queue[queue_index];
+
+                    ++queue_index;
+
+                    if (coordinates.x == Chunk::WIDTH - 1) {
+                        side_reachability_code |= (1ull << 1);
+                        side_reachability_code |= (1ull << 6);
+
+                        side_reachability_code |= (1ull << 7);
+                    }
+
+                    if (coordinates.y == 0) {
+                        side_reachability_code |= (1ull << 2);
+                        side_reachability_code |= (1ull << 12);
+
+                        side_reachability_code |= (1ull << 14);
+                    } else if (coordinates.y == Chunk::HEIGHT - 1) {
+                        side_reachability_code |= (1ull << 3);
+                        side_reachability_code |= (1ull << 18);
+
+                        side_reachability_code |= (1ull << 21);
+                    }
+
+                    if (coordinates.z == 0) {
+                        side_reachability_code |= (1ull << 4);
+                        side_reachability_code |= (1ull << 24);
+
+                        side_reachability_code |= (1ull << 28);
+                    } else if (coordinates.z == Chunk::DEPTH - 1) {
+                        side_reachability_code |= (1ull << 5);
+                        side_reachability_code |= (1ull << 30);
+
+                        side_reachability_code |= (1ull << 35);
+                    }
+
+                    if ((side_reachability_code & 0b111111) == 0b111111) {
+                        flag = true;
+                        break;
+                    }
+
+                    QUEUE_STEP;
+                }
+            }
+
+            if (flag) {
+                break;
+            }
+        }
+
+        if (flag) {
+            break;
+        }
+    }
+
+    if (flag) {
+        reachability_code = 0b111111'111111'111111'111111'111111'111111;
+    } else {
+        reachability_code |= side_reachability_code;
+
+        for (int i = 1; i < 5; ++i) {
+            if (((side_reachability_code >> i) & 1)) {
+                for (int j = i + 1; j < 6; ++j) {
+                    if (((side_reachability_code >> j) & 1)) {
+                        reachability_code |= (1ull << (6 * i + j));
+                        reachability_code |= (1ull << (6 * j + i));
+                    }
+                }
+            }
+        }
+
+        side_reachability_code = 0;
+
+        queue_size = 0;
+        queue_index = 0;
+
+        for (int y = 0; y < Chunk::HEIGHT; ++y) {
+            for (int z = 0; z < Chunk::DEPTH; ++z) {
+                if (!((field[(Chunk::WIDTH - 1) * Chunk::HEIGHT + y] >> z) & 1) &&
+                    Blocks::blocks[voxels_[(y * Chunk::DEPTH + z) * Chunk::WIDTH + (Chunk::WIDTH - 1)].id].is_transparent) {
+                    queue[queue_size] = {Chunk::WIDTH - 1, y, z};
+                    field[(Chunk::WIDTH - 1) * Chunk::HEIGHT + y] |= (1 << z);
+
+                    ++queue_size;
+
+                    side_reachability_code = (1ull << 7);
+                    while (queue_index != queue_size) {
+                        glm::ivec3 coordinates = queue[queue_index];
+                        ++queue_index;
+
+                        if (coordinates.y == 0) {
+                            side_reachability_code |= (1ull << 8);
+                            side_reachability_code |= (1ull << 13);
+
+                            side_reachability_code |= (1ull << 14);
+                        } else if (coordinates.y == Chunk::HEIGHT - 1) {
+                            side_reachability_code |= (1ull << 9);
+                            side_reachability_code |= (1ull << 19);
+
+                            side_reachability_code |= (1ull << 21);
+                        }
+
+                        if (coordinates.z == 0) {
+                            side_reachability_code |= (1ull << 10);
+                            side_reachability_code |= (1ull << 25);
+
+                            side_reachability_code |= (1ull << 28);
+                        } else if (coordinates.z == Chunk::DEPTH - 1) {
+                            side_reachability_code |= (1ull << 11);
+                            side_reachability_code |= (1ull << 31);
+
+                            side_reachability_code |= (1ull << 35);
+                        }
+
+                        QUEUE_STEP;
+                    }
+                }
+            }
+        }
+
+        reachability_code |= side_reachability_code;
+
+        side_reachability_code >>= 6;
+
+        for (int i = 2; i < 5; ++i) {
+            if (((side_reachability_code >> i) & 1)) {
+                for (int j = i + 1; j < 6; ++j) {
+                    if (((side_reachability_code >> j) & 1)) {
+                        reachability_code |= (1ull << (6 * i + j));
+                        reachability_code |= (1ull << (6 * j + i));
+                    }
+                }
+            }
+        }
+
+        side_reachability_code = 0;
+
+        queue_size = 0;
+        queue_index = 0;
+
+        for (int x = 0; x < Chunk::WIDTH; ++x) {
+            for (int z = 0; z < Chunk::DEPTH; ++z) {
+                if (!((field[x * Chunk::HEIGHT + 0] >> z) & 1) &&
+                    Blocks::blocks[voxels_[(0 * Chunk::DEPTH + z) * Chunk::WIDTH + x].id].is_transparent) {
+                    queue[queue_size] = {x, 0, z};
+                    field[x * Chunk::HEIGHT + 0] |= (1 << z);
+
+                    ++queue_size;
+
+                    side_reachability_code = (1ull << 14);
+                    while (queue_index != queue_size) {
+                        glm::ivec3 coordinates = queue[queue_index];
+                        ++queue_index;
+
+                        if (coordinates.y == Chunk::HEIGHT - 1) {
+                            side_reachability_code |= (1ull << 15);
+                            side_reachability_code |= (1ull << 20);
+
+                            side_reachability_code |= (1ull << 21);
+                        }
+
+                        if (coordinates.z == 0) {
+                            side_reachability_code |= (1ull << 16);
+                            side_reachability_code |= (1ull << 26);
+
+                            side_reachability_code |= (1ull << 28);
+                        } else if (coordinates.z == Chunk::DEPTH - 1) {
+                            side_reachability_code |= (1ull << 17);
+                            side_reachability_code |= (1ull << 32);
+
+                            side_reachability_code |= (1ull << 35);
+                        }
+
+                        QUEUE_STEP;
+                    }
+                }
+            }
+        }
+        reachability_code |= side_reachability_code;
+
+        side_reachability_code >>= 12;
+
+        for (int i = 3; i < 5; ++i) {
+            if (((side_reachability_code >> i) & 1)) {
+                for (int j = i + 1; j < 6; ++j) {
+                    if (((side_reachability_code >> j) & 1)) {
+                        reachability_code |= (1ull << (6 * i + j));
+                        reachability_code |= (1ull << (6 * j + i));
+                    }
+                }
+            }
+        }
+
+        side_reachability_code = 0;
+
+        queue_size = 0;
+        queue_index = 0;
+
+        for (int x = 0; x < Chunk::WIDTH; ++x) {
+            for (int z = 0; z < Chunk::DEPTH; ++z) {
+                if (!((field[x * Chunk::HEIGHT + Chunk::HEIGHT - 1] >> z) & 1) &&
+                    Blocks::blocks[voxels_[((Chunk::HEIGHT - 1) * Chunk::DEPTH + z) * Chunk::WIDTH + x].id].is_transparent) {
+                    queue[queue_size] = {x, Chunk::HEIGHT - 1, z};
+                    field[x * Chunk::HEIGHT + (Chunk::HEIGHT - 1)] |= (1 << z);
+
+                    ++queue_size;
+
+                    side_reachability_code = (1ull << 21);
+                    while (queue_index != queue_size) {
+                        glm::ivec3 coordinates = queue[queue_index];
+                        ++queue_index;
+
+                        if (coordinates.z == 0) {
+                            side_reachability_code |= (1ull << 22);
+                            side_reachability_code |= (1ull << 27);
+
+                            side_reachability_code |= (1ull << 28);
+                        } else if (coordinates.z == Chunk::DEPTH - 1) {
+                            side_reachability_code |= (1ull << 23);
+                            side_reachability_code |= (1ull << 33);
+
+                            side_reachability_code |= (1ull << 35);
+                        }
+
+                        QUEUE_STEP;
+                    }
+                }
+            }
+        }
+
+        reachability_code |= side_reachability_code;
+
+        side_reachability_code >>= 18;
+
+        for (int i = 4; i < 5; ++i) {
+            if (((side_reachability_code >> i) & 1)) {
+                for (int j = i + 1; j < 6; ++j) {
+                    if (((side_reachability_code >> j) & 1)) {
+                        reachability_code |= (1ull << (6 * i + j));
+                        reachability_code |= (1ull << (6 * j + i));
+                    }
+                }
+            }
+        }
+
+        queue_size = 0;
+        queue_index = 0;
+
+        for (int x = 0; x < Chunk::WIDTH; ++x) {
+            for (int y = 0; y < Chunk::HEIGHT; ++y) {
+                if (!((field[x * Chunk::HEIGHT + y] >> 0) & 1) &&
+                    Blocks::blocks[voxels_[(y * Chunk::DEPTH + 0) * Chunk::WIDTH + x].id].is_transparent) {
+                    queue[queue_size] = {x, y, 0};
+                    field[x * Chunk::HEIGHT + y] |= (1 << 0);
+
+                    ++queue_size;
+
+                    reachability_code |= (1ull << 28);
+                    while (queue_index != queue_size) {
+                        glm::ivec3 coordinates = queue[queue_index];
+                        ++queue_index;
+
+                        if (coordinates.z == Chunk::DEPTH - 1) {
+                            reachability_code |= (1ull << 24);
+                            reachability_code |= (1ull << 29);
+
+                            reachability_code |= (1ull << 35);
+                        }
+
+                        QUEUE_STEP;
+                    }
+                }
+            }
+        }
+
+        for (int x = 0; x < Chunk::WIDTH; ++x) {
+            for (int y = 0; y < Chunk::HEIGHT; ++y) {
+                if (!((field[x * Chunk::HEIGHT + y] >> (Chunk::DEPTH - 1)) & 1) &&
+                    Blocks::blocks[voxels_[(y * Chunk::DEPTH + Chunk::DEPTH - 1) * Chunk::WIDTH + x].id].is_transparent) {
+
+                    reachability_code |= (1ull << 35);
+                    return;
+                }
+            }
+        }
+    }
 }
 
 void Chunk::Culling(uint16_t (&X_rows)[Chunk::HEIGHT][Chunk::DEPTH],

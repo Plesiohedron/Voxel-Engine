@@ -2,12 +2,12 @@
 
 namespace Blocks {
 Block blocks[256] = {
-    {0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {1, 1, 1, 1, 1, 1, 0, 0, 0},
-    {19, 19, 4, 1, 19, 19, 0, 0, 0},
-    {5, 5, 5, 5, 5, 5, 0, 0, 0},
-    {6, 6, 6, 6, 6, 6, 15, 0, 0},
-    {6, 6, 6, 6, 6, 6, 0, 15, 0},
-    {6, 6, 6, 6, 6, 6, 0, 0, 15},
+    {.texture_id = {0, 0, 0, 0, 0, 0}, .r = 0,  .g = 0,  .b = 0,  .is_transparent = true},
+    {.texture_id = {1, 1, 1, 1, 1, 1}, .r = 0,  .g = 0,  .b = 0,  .is_transparent = false},
+    {.texture_id = {3, 3, 4, 1, 3, 3}, .r = 0,  .g = 0,  .b = 0,  .is_transparent = false},
+    {.texture_id = {5, 5, 5, 5, 5, 5}, .r = 0,  .g = 0,  .b = 0,  .is_transparent = false},
+    {.texture_id = {6, 6, 6, 6, 6, 6}, .r = 15, .g = 0,  .b = 0,  .is_transparent = false},
+    {.texture_id = {6, 6, 6, 6, 6, 6}, .r = 0,  .g = 15, .b = 0,  .is_transparent = false},
+    {.texture_id = {6, 6, 6, 6, 6, 6}, .r = 0,  .g = 0,  .b = 15, .is_transparent = false},
 };
 }

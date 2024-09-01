@@ -14,6 +14,7 @@ flat out vec3 color0;
 flat out vec3 color1;
 flat out vec3 color2;
 flat out vec3 color3;
+flat out uint texture_id;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -64,6 +65,7 @@ void main() {
 		color2 *= vec3(0.5566f, 0.8721f, 0.3255f);
 		color3 *= vec3(0.5566f, 0.8721f, 0.3255f);
 	}
+	texture_id = UV_layer;
 
 	if (gl_VertexID % 4 == 0) {
 		frag_coordinates = vec2(0, 0);
